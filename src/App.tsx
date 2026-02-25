@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Zap, 
   Shield, 
-  Layers, 
   ArrowRight,
-  TrendingUp,
   Cpu,
   Globe,
   Lock
@@ -12,25 +9,56 @@ import {
 import { motion } from 'framer-motion';
 import { useStacksWallet } from './hooks/useStacksWallet';
 import Vault from './components/Vault';
+import Dashboard from './components/Dashboard';
 
 interface NavbarProps {
   onConnect: () => void;
   userAddress: string | null;
   onLogout: () => void;
   isConnecting: boolean;
+  activeView: 'dashboard' | 'vault' | 'landing';
+  onNavigate: (view: 'dashboard' | 'vault') => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onConnect, userAddress, onLogout, isConnecting }) => (
+const Navbar: React.FC<NavbarProps> = ({ 
+  onConnect, 
+  userAddress, 
+  onLogout, 
+  isConnecting, 
+  activeView, 
+  onNavigate 
+}) => (
   <header className="header">
     <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-      <div className="logo">
+      <div className="logo" onClick={() => userAddress ? onNavigate('dashboard') : null} style={{ cursor: userAddress ? 'pointer' : 'default' }}>
         <Shield size={24} fill="var(--primary)" />
         Stack<span>Vault</span>
       </div>
       <nav className="nav-links">
-        <a href="#about" className="nav-link">Protocol</a>
-        <a href="#security" className="nav-link">Security</a>
-        <a href="#stats" className="nav-link">Stats</a>
+        {userAddress ? (
+          <>
+            <button 
+              onClick={() => onNavigate('dashboard')} 
+              className={`nav-link ${activeView === 'dashboard' ? 'active' : ''}`}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: activeView === 'dashboard' ? 'var(--primary)' : 'inherit' }}
+            >
+              Dashboard
+            </button>
+            <button 
+              onClick={() => onNavigate('vault')} 
+              className={`nav-link ${activeView === 'vault' ? 'active' : ''}`}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: activeView === 'vault' ? 'var(--primary)' : 'inherit' }}
+            >
+              Vault Manager
+            </button>
+          </>
+        ) : (
+          <>
+            <a href="#about" className="nav-link">Protocol</a>
+            <a href="#security" className="nav-link">Security</a>
+            <a href="#stats" className="nav-link">Stats</a>
+          </>
+        )}
       </nav>
       {userAddress ? (
         <button className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem' }} onClick={onLogout}>
@@ -144,6 +172,32 @@ const App: React.FC = () => {
     error 
   } = useStacksWallet();
 
+  const [activeView, setActiveView] = useState<'dashboard' | 'vault'>('dashboard');
+
+  // Protection logic: if disconnected, reset active view
+  useEffect(() => {
+    if (!userAddress) {
+      setActiveView('dashboard'); // Default for next login
+    }
+  }, [userAddress]);
+
+  const renderContent = () => {
+    if (!userAddress) {
+      return <LandingPage onConnect={handleConnect} isConnecting={isConnecting} error={error} />;
+    }
+
+    if (activeView === 'vault') {
+      return <Vault userAddress={userAddress} onLogout={handleDisconnect} />;
+    }
+
+    return (
+      <Dashboard 
+        userAddress={userAddress} 
+        onNavigateToVault={() => setActiveView('vault')} 
+      />
+    );
+  };
+
   return (
     <div className="app">
       <Navbar 
@@ -151,13 +205,11 @@ const App: React.FC = () => {
         userAddress={userAddress} 
         onLogout={handleDisconnect} 
         isConnecting={isConnecting}
+        activeView={userAddress ? activeView : 'landing'}
+        onNavigate={(view) => setActiveView(view)}
       />
       
-      {userAddress ? (
-        <Vault userAddress={userAddress} onLogout={handleDisconnect} />
-      ) : (
-        <LandingPage onConnect={handleConnect} isConnecting={isConnecting} error={error} />
-      )}
+      {renderContent()}
 
       <footer>
         <div className="container" style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>

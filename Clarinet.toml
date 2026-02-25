@@ -1,0 +1,19 @@
+[project]
+name = "StackVault"
+authors = []
+description = ""
+telemetry = true
+requirements = []
+cache_dir = "./.cache"
+boot_contracts = ["costs-v2", "pox-v2", "pox-v3", "lockup", "costs-v3"]
+[contracts.stackvault-protocol]
+path = "contracts/stackvault-protocol.clar"
+clarity_version = 2
+[repl.analysis]
+passes = ["check_checker"]
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false

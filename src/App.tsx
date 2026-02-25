@@ -10,13 +10,17 @@ import {
   Lock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { AppConfig, UserSession, showConnect } from '@stacks/connect';
+import { useStacksWallet } from './hooks/useStacksWallet';
 import Vault from './components/Vault';
 
-const appConfig = new AppConfig(['store_write', 'publish_data']);
-const userSession = new UserSession({ appConfig });
+interface NavbarProps {
+  onConnect: () => void;
+  userAddress: string | null;
+  onLogout: () => void;
+  isConnecting: boolean;
+}
 
-const Navbar = ({ onConnect, userAddress, onLogout }: any) => (
+const Navbar: React.FC<NavbarProps> = ({ onConnect, userAddress, onLogout, isConnecting }) => (
   <header className="header">
     <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
       <div className="logo">
@@ -33,15 +37,26 @@ const Navbar = ({ onConnect, userAddress, onLogout }: any) => (
           Disconnect
         </button>
       ) : (
-        <button className="btn btn-primary" style={{ padding: '0.5rem 1.5rem' }} onClick={onConnect}>
-          Connect Wallet
+        <button 
+          className="btn btn-primary" 
+          style={{ padding: '0.5rem 1.5rem', opacity: isConnecting ? 0.7 : 1 }} 
+          onClick={onConnect}
+          disabled={isConnecting}
+        >
+          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
         </button>
       )}
     </div>
   </header>
 );
 
-const LandingPage = ({ onConnect }: any) => (
+interface LandingPageProps {
+  onConnect: () => void;
+  isConnecting: boolean;
+  error: string | null;
+}
+
+const LandingPage: React.FC<LandingPageProps> = ({ onConnect, isConnecting, error }) => (
   <main>
     <section className="hero">
       <div className="container">
@@ -58,13 +73,24 @@ const LandingPage = ({ onConnect }: any) => (
             StackVault is a next-generation liquidity protocol built on the security of Bitcoin. Deposit STX, provide liquidity, and earn returns in a decentralized vault.
           </p>
           <div className="hero-btns">
-            <button className="btn btn-primary" onClick={onConnect}>
-              Launch Protocol <ArrowRight size={18} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />
+            <button 
+              className="btn btn-primary" 
+              onClick={onConnect}
+              disabled={isConnecting}
+              style={{ opacity: isConnecting ? 0.7 : 1 }}
+            >
+              {isConnecting ? 'Connecting...' : 'Launch Protocol'} 
+              {!isConnecting && <ArrowRight size={18} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />}
             </button>
             <button className="btn btn-secondary">
               View Whitepaper
             </button>
           </div>
+          {error && (
+            <p style={{ color: '#ef4444', marginTop: '1rem', fontSize: '0.875rem' }}>
+              Error: {error}
+            </p>
+          )}
         </motion.div>
       </div>
     </section>
@@ -110,51 +136,27 @@ const LandingPage = ({ onConnect }: any) => (
 );
 
 const App: React.FC = () => {
-  const [userData, setUserData] = useState<any>(null);
-
-  useEffect(() => {
-    if (userSession.isSignInPending()) {
-      userSession.handlePendingSignIn().then((userData) => {
-        setUserData(userData);
-      });
-    } else if (userSession.isUserSignedIn()) {
-      setUserData(userSession.loadUserData());
-    }
-  }, []);
-
-  const handleConnect = () => {
-    showConnect({
-      appDetails: {
-        name: 'StackVault',
-        icon: window.location.origin + '/vite.svg',
-      },
-      redirectTo: '/',
-      onFinish: () => {
-        setUserData(userSession.loadUserData());
-      },
-      userSession,
-    });
-  };
-
-  const handleLogout = () => {
-    userSession.signUserOut();
-    setUserData(null);
-  };
-
-  const userAddress = userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet;
+  const { 
+    userAddress, 
+    handleConnect, 
+    handleDisconnect, 
+    isConnecting, 
+    error 
+  } = useStacksWallet();
 
   return (
     <div className="app">
       <Navbar 
         onConnect={handleConnect} 
         userAddress={userAddress} 
-        onLogout={handleLogout} 
+        onLogout={handleDisconnect} 
+        isConnecting={isConnecting}
       />
       
       {userAddress ? (
-        <Vault userAddress={userAddress} onLogout={handleLogout} />
+        <Vault userAddress={userAddress} onLogout={handleDisconnect} />
       ) : (
-        <LandingPage onConnect={handleConnect} />
+        <LandingPage onConnect={handleConnect} isConnecting={isConnecting} error={error} />
       )}
 
       <footer>

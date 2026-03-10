@@ -29,8 +29,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
   const stats = {
     totalLiquidity: `${totalLiquidity.toLocaleString()} STX`,
     userBalance: `${userBalance.toLocaleString()} STX`,
-    accruedYield: `${(userBalance * 0.045 / 365).toFixed(4)} STX`, // Mock daily accrued
-    apy: "4.52%",
+    accruedYield: `${(userBalance * 0.05 / 365).toFixed(4)} STX`, // Daily yield estimate
+    apy: "5.00%",
   };
 
   const handleQuickDeposit = async () => {

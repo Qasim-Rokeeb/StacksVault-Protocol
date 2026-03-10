@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Lock, 
-  Unlock, 
   ArrowDownCircle, 
   ArrowUpCircle,
   TrendingUp,
-  Info,
   ShieldCheck,
   Zap,
   Clock,
-  ExternalLink
+  ExternalLink,
+  Loader2,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useVault } from '../hooks/useVault';
 
 interface VaultProps {
   userAddress: string;
@@ -20,11 +21,23 @@ interface VaultProps {
 
 const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
   const [amount, setAmount] = useState<string>('');
-  const [balance, setBalance] = useState<number>(0);
-  const [totalLiquidity, setTotalLiquidity] = useState<number>(125430);
+  const [balance] = useState<number>(2450); // Mock balance for now
+  const [totalLiquidity] = useState<number>(1254300);
   const [isDepositing, setIsDepositing] = useState(true);
+  
+  const { depositSTX, withdrawSTX, status, txId, error, resetStatus } = useVault();
 
-  const handleAction = () => {
+  useEffect(() => {
+    if (status === 'success') {
+      const timer = setTimeout(() => {
+        resetStatus();
+        setAmount('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, resetStatus]);
+
+  const handleAction = async () => {
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0) return;
 
@@ -33,18 +46,13 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
         alert("Minimum deposit is 1 STX");
         return;
       }
-      setBalance(prev => prev + val);
-      setTotalLiquidity(prev => prev + val);
-      setAmount('');
-      // In a real app, this would be a contract call
+      await depositSTX(val);
     } else {
       if (val > balance) {
         alert("Insufficient balance");
         return;
       }
-      setBalance(prev => prev - val);
-      setTotalLiquidity(prev => prev - val);
-      setAmount('');
+      await withdrawSTX(val);
     }
   };
 
@@ -72,12 +80,17 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
             </div>
             <h2 style={{ fontSize: '3rem', fontWeight: '900', lineHeight: '1' }}>Vault Manager</h2>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Connected Wallet</p>
-            <p style={{ fontFamily: 'monospace', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--secondary)', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-              {userAddress.slice(0, 6)}...{userAddress.slice(-6)}
-              <ExternalLink size={14} className="text-muted" />
-            </p>
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem' }}>
+            <button className="btn btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={onLogout}>
+              Disconnect
+            </button>
+            <div>
+              <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Connected Wallet</p>
+              <p style={{ fontFamily: 'monospace', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--secondary)', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                {userAddress.slice(0, 6)}...{userAddress.slice(-6)}
+                <ExternalLink size={14} className="text-muted" />
+              </p>
+            </div>
           </div>
         </div>
 
@@ -168,6 +181,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
 
                 <button 
                   onClick={handleAction}
+                  disabled={status === 'pending'}
                   className="btn btn-primary" 
                   style={{ 
                     width: '100%', 
@@ -177,12 +191,56 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.75rem'
+                    gap: '0.75rem',
+                    opacity: status === 'pending' ? 0.7 : 1
                   }}
                 >
-                  {isDepositing ? <ArrowDownCircle /> : <ArrowUpCircle />}
-                  {isDepositing ? 'Confirm Deposit' : 'Confirm Withdrawal'}
+                  {status === 'pending' ? <Loader2 className="animate-spin" /> : (isDepositing ? <ArrowDownCircle /> : <ArrowUpCircle />)}
+                  {status === 'pending' ? 'Processing...' : (isDepositing ? 'Confirm Deposit' : 'Confirm Withdrawal')}
                 </button>
+
+                <AnimatePresence>
+                  {status !== 'idle' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      style={{ 
+                        marginTop: '1.5rem',
+                        padding: '1rem',
+                        borderRadius: '12px',
+                        background: status === 'success' ? 'rgba(16, 185, 129, 0.1)' : (status === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.05)'),
+                        border: '1px solid',
+                        borderColor: status === 'success' ? '#10b981' : (status === 'error' ? '#ef4444' : 'var(--border)'),
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      {status === 'success' && <CheckCircle2 size={18} style={{ color: '#10b981' }} />}
+                      {status === 'error' && <AlertCircle size={18} style={{ color: '#ef4444' }} />}
+                      {status === 'pending' && <Loader2 size={18} className="animate-spin" />}
+                      
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontWeight: '600', color: status === 'success' ? '#10b981' : (status === 'error' ? '#ef4444' : 'white') }}>
+                          {status === 'success' ? 'Transaction Success!' : (status === 'error' ? 'Transaction Failed' : 'Transaction Pending')}
+                        </p>
+                        {txId && (
+                          <a 
+                            href={`https://explorer.hiro.so/txid/${txId}?chain=mainnet`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ fontSize: '0.75rem', textDecoration: 'underline', color: 'var(--muted)', marginTop: '0.25rem', display: 'block' }}
+                          >
+                            View in Explorer
+                          </a>
+                        )}
+                        {error && <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>{error}</p>}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>

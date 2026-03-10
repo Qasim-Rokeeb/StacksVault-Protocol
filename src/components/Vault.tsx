@@ -21,11 +21,25 @@ interface VaultProps {
 
 const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
   const [amount, setAmount] = useState<string>('');
-  const [balance] = useState<number>(2450); // Mock balance for now
-  const [totalLiquidity] = useState<number>(1254300);
   const [isDepositing, setIsDepositing] = useState(true);
   
-  const { depositSTX, withdrawSTX, status, txId, error, resetStatus } = useVault();
+  const { 
+    depositSTX, 
+    withdrawSTX, 
+    fetchBalance, 
+    fetchTotalLiquidity, 
+    status, 
+    txId, 
+    error, 
+    userBalance, 
+    totalLiquidity, 
+    resetStatus 
+  } = useVault();
+
+  useEffect(() => {
+    fetchBalance(userAddress);
+    fetchTotalLiquidity();
+  }, [userAddress, fetchBalance, fetchTotalLiquidity]);
 
   useEffect(() => {
     if (status === 'success') {
@@ -48,7 +62,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
       }
       await depositSTX(val);
     } else {
-      if (val > balance) {
+      if (val > userBalance) {
         alert("Insufficient balance");
         return;
       }
@@ -134,7 +148,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                     <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>Input Amount</span>
                     <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
-                      Available: <span style={{ color: 'var(--foreground)', fontWeight: '600' }}>{isDepositing ? 'Unlimited' : `${balance} STX`}</span>
+                      Available: <span style={{ color: 'var(--foreground)', fontWeight: '600' }}>{isDepositing ? 'Unlimited' : `${userBalance.toLocaleString()} STX`}</span>
                     </span>
                   </div>
                   <div style={{ position: 'relative' }}>
@@ -158,7 +172,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                     />
                     <div style={{ position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <button 
-                        onClick={() => !isDepositing && setAmount(balance.toString())}
+                        onClick={() => !isDepositing && setAmount(userBalance.toString())}
                         style={{ padding: '0.4rem 0.825rem', background: 'rgba(255, 90, 0, 0.1)', color: 'var(--primary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700' }}
                       >
                         MAX
@@ -286,11 +300,11 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '2rem', borderRadius: '24px', border: '1px dotted var(--border)' }}>
               <h4 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Your Position</h4>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                <span style={{ fontSize: '2.5rem', fontWeight: '900' }}>{balance.toLocaleString()}</span>
+                <span style={{ fontSize: '2.5rem', fontWeight: '900' }}>{userBalance.toLocaleString()}</span>
                 <span style={{ color: 'var(--muted)', fontWeight: '600' }}>STX</span>
               </div>
               <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                ≈ ${(balance * 2.15).toLocaleString()} USD
+                ≈ ${(userBalance * 2.15).toLocaleString()} USD
               </p>
             </div>
           </div>

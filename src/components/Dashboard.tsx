@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wallet, 
   TrendingUp, 
@@ -18,13 +18,18 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault }) => {
   const [quickAmount, setQuickAmount] = useState<string>('');
-  const { depositSTX, status } = useVault();
+  const { depositSTX, fetchBalance, fetchTotalLiquidity, status, userBalance, totalLiquidity } = useVault();
 
-  // Mock data for the protocol
+  useEffect(() => {
+    fetchBalance(userAddress);
+    fetchTotalLiquidity();
+  }, [userAddress, fetchBalance, fetchTotalLiquidity]);
+
+  // Dynamic stats
   const stats = {
-    totalLiquidity: "1,254,300 STX",
-    userBalance: "2,450 STX",
-    accruedYield: "45.28 STX",
+    totalLiquidity: `${totalLiquidity.toLocaleString()} STX`,
+    userBalance: `${userBalance.toLocaleString()} STX`,
+    accruedYield: `${(userBalance * 0.045 / 365).toFixed(4)} STX`, // Mock daily accrued
     apy: "4.52%",
   };
 

@@ -125,3 +125,60 @@ Clarinet.test({
         block.receipts[0].result.expectErr().expectUint(102); // ERR-MIN-DEPOSIT
     },
 });
+
+Clarinet.test({
+    name: "Ensure yield accrues correctly over time (1 year simulate)",
+    async fn(chain: Chain, accounts: Map<string, Account>) {
+        const wallet_1 = accounts.get("wallet_1")!;
+        const amount = 100000000; // 100 STX
+        const blocksInYear = 52560;
+
+        // Deposit
+        chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(amount)], wallet_1.address)
+        ]);
+
+        // Mine 1 year worth of blocks
+        chain.mineEmptyBlockUntil(blocksInYear + 3); // Accommodate initial blocks
+
+        // Check balance (should be 100 STX + 5% APY = 105 STX)
+        let balanceResult = chain.callReadOnlyFn("stackvault-protocol", "get-balance", [types.principal(wallet_1.address)], wallet_1.address);
+        balanceResult.result.expectOk().expectUint(amount + 5000000);
+
+        // Check total liquidity also includes yield
+        // Let's claim yield to update the on-chain var
+        chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "claim-yield", [], wallet_1.address)
+        ]);
+
+        let finalTotalLiquidity = chain.callReadOnlyFn("stackvault-protocol", "get-total-liquidity", [], wallet_1.address);
+        finalTotalLiquidity.result.expectOk().expectUint(amount + 5000000);
+    },
+});
+
+Clarinet.test({
+    name: "Ensure yield is checkpointed during subsequent deposits",
+    async fn(chain: Chain, accounts: Map<string, Account>) {
+        const wallet_1 = accounts.get("wallet_1")!;
+        const initialDeposit = 100000000; // 100 STX
+        const halfYearBlocks = 26280;
+        const secondDeposit = 100000000; // 100 STX
+
+        // Initial Deposit
+        chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(initialDeposit)], wallet_1.address)
+        ]);
+
+        // Mine 0.5 year worth of blocks
+        chain.mineEmptyBlockUntil(halfYearBlocks + 3);
+
+        // Second Deposit (should trigger yield accrual)
+        chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(secondDeposit)], wallet_1.address)
+        ]);
+
+        // Check balance (should be 100 + 100 + 2.5 yield = 202.5 STX)
+        let balanceResult = chain.callReadOnlyFn("stackvault-protocol", "get-balance", [types.principal(wallet_1.address)], wallet_1.address);
+        balanceResult.result.expectOk().expectUint(initialDeposit + secondDeposit + 2500000);
+    },
+});

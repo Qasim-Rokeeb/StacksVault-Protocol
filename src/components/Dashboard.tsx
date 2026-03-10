@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Wallet, 
   TrendingUp, 
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import StatCard from './StatCard';
+import { useVault } from '../hooks/useVault';
 
 interface DashboardProps {
   userAddress: string;
@@ -16,12 +17,25 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault }) => {
+  const [quickAmount, setQuickAmount] = useState<string>('');
+  const { depositSTX, status } = useVault();
+
   // Mock data for the protocol
   const stats = {
     totalLiquidity: "1,254,300 STX",
     userBalance: "2,450 STX",
     accruedYield: "45.28 STX",
     apy: "4.52%",
+  };
+
+  const handleQuickDeposit = async () => {
+    const val = parseFloat(quickAmount);
+    if (isNaN(val) || val < 1) {
+      alert("Minimum deposit is 1 STX");
+      return;
+    }
+    await depositSTX(val);
+    if (status === 'success') setQuickAmount('');
   };
 
   return (
@@ -94,19 +108,64 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
             borderRadius: '32px', 
             border: '1px solid var(--border)' 
           }}>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Zap size={24} style={{ color: 'var(--primary)' }} /> Quick Actions
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Zap size={24} style={{ color: 'var(--primary)' }} /> Quick Deposit
             </h3>
-            <p style={{ color: 'var(--muted)', marginBottom: '2rem', lineHeight: '1.6' }}>
-              Manage your positions, deposit more STX to earn yield, or withdraw your liquidity instantly from the vault manager.
+            <p style={{ color: 'var(--muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+              Instantly add liquidity to the vault. Minimum deposit is 1 STX.
             </p>
+            
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type="number" 
+                  placeholder="1.00"
+                  value={quickAmount}
+                  onChange={(e) => setQuickAmount(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '1rem 1.25rem', 
+                    background: 'rgba(0,0,0,0.2)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    outline: 'none'
+                  }} 
+                />
+                <span style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', fontWeight: '700', color: 'var(--muted)' }}>STX</span>
+              </div>
+            </div>
+
             <button 
-              onClick={onNavigateToVault}
+              onClick={handleQuickDeposit}
+              disabled={status === 'pending'}
               className="btn btn-primary" 
-              style={{ padding: '1rem 2rem', width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              style={{ padding: '1rem 2rem', width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: status === 'pending' ? 0.7 : 1 }}
             >
-              Open Vault Manager <ArrowRight size={18} />
+              {status === 'pending' ? 'Processing...' : 'Deposit Now'} <ArrowRight size={18} />
             </button>
+
+            {status !== 'idle' && (
+              <div style={{ 
+                marginTop: '1rem', 
+                fontSize: '0.8rem', 
+                color: status === 'success' ? '#10b981' : (status === 'error' ? '#ef4444' : 'var(--muted)'),
+                textAlign: 'center'
+              }}>
+                {status === 'success' ? 'Deposit successful!' : (status === 'error' ? 'Deposit failed' : 'Waiting for confirmation...')}
+              </div>
+            )}
+
+            <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+              <button 
+                onClick={onNavigateToVault}
+                style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.9rem', padding: 0 }}
+              >
+                Go to Vault Manager →
+              </button>
+            </div>
           </div>
 
           <div style={{ 

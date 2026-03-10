@@ -47,19 +47,21 @@
 
 ;; @desc Withdraw STX from the vault
 ;; @param amount: The amount of STX to withdraw
-(define-public (withdraw-liquidity (amount uint))
+(define-public (withdraw (amount uint))
     (let (
         (user-data (unwrap! (map-get? VaultBalances tx-sender) ERR-INSUFFICIENT-FUNDS))
         (current-balance (get amount user-data))
+        (caller tx-sender)
     )
         ;; Check if user has enough balance
         (asserts! (<= amount current-balance) ERR-INSUFFICIENT-FUNDS)
         
         ;; Transfer STX from contract to user
-        (try! (as-contract (stx-transfer? amount tx-sender tx-sender)))
+        ;; Inside as-contract, tx-sender becomes the contract address
+        (try! (as-contract (stx-transfer? amount tx-sender caller)))
         
         ;; Update user balance
-        (map-set VaultBalances tx-sender {
+        (map-set VaultBalances caller {
             amount: (- current-balance amount),
             last-deposit-height: block-height
         })

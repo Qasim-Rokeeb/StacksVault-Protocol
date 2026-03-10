@@ -9,6 +9,10 @@ boot_contracts = ["costs-v2", "pox-v2", "pox-v3", "lockup", "costs-v3"]
 [contracts.stackvault-protocol]
 path = "contracts/stackvault-protocol.clar"
 clarity_version = 2
+
+[contracts.vault]
+path = "contracts/vault.clar"
+clarity_version = 2
 [repl.analysis]
 passes = ["check_checker"]
 

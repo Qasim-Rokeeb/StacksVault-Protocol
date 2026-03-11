@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AppConfig, UserSession, showConnect, UserData } from '@stacks/connect';
+import { AppConfig, UserSession, showConnect } from '@stacks/connect';
+import type { UserData } from '@stacks/connect';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
 export const userSession = new UserSession({ appConfig });

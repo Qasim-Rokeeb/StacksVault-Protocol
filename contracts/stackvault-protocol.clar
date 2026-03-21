@@ -5,6 +5,7 @@
 (define-constant ERR-NOT-AUTHORIZED (err u100))
 (define-constant ERR-INSUFFICIENT-FUNDS (err u101))
 (define-constant ERR-MIN-DEPOSIT (err u102))
+(define-constant ERR-PAUSED (err u103))
 
 ;; Yield Constants (5% APY = 500/10000)
 (define-constant YIELD-PRECISION u10000)
@@ -13,6 +14,7 @@
 
 ;; Data Vars
 (define-data-var total-liquidity uint u0)
+(define-data-var protocol-paused bool false)
 
 ;; Data Maps
 (define-map VaultBalances
@@ -74,6 +76,9 @@
 ;; @param amount: The amount of STX to deposit (in micro-STX)
 (define-public (deposit-liquidity (amount uint))
     (begin
+        ;; Ensure protocol is active
+        (asserts! (not (var-get protocol-paused)) ERR-PAUSED)
+        
         ;; Accrue existing yield first
         (try! (accrue-yield tx-sender))
         
@@ -104,6 +109,9 @@
 ;; @param amount: The amount of STX to withdraw
 (define-public (withdraw (amount uint))
     (begin
+        ;; Ensure protocol is active
+        (asserts! (not (var-get protocol-paused)) ERR-PAUSED)
+        
         ;; Accrue existing yield first
         (try! (accrue-yield tx-sender))
         
@@ -134,7 +142,28 @@
 
 ;; @desc Manually claim accrued yield
 (define-public (claim-yield)
-    (accrue-yield tx-sender)
+    (begin
+        (asserts! (not (var-get protocol-paused)) ERR-PAUSED)
+        (accrue-yield tx-sender)
+    )
+)
+
+;; Admin Functions
+
+;; @desc Pause the protocol (admin only)
+(define-public (pause-protocol)
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (ok (var-set protocol-paused true))
+    )
+)
+
+;; @desc Resume the protocol (admin only)
+(define-public (resume-protocol)
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (ok (var-set protocol-paused false))
+    )
 )
 
 ;; Read-only Functions
@@ -157,4 +186,9 @@
 ;; @desc Get the total liquidity in the vault
 (define-read-only (get-total-liquidity)
     (ok (var-get total-liquidity))
+)
+
+;; @desc Check if protocol is paused
+(define-read-only (is-protocol-paused)
+    (var-get protocol-paused)
 )

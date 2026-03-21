@@ -182,3 +182,88 @@ Clarinet.test({
         balanceResult.result.expectOk().expectUint(initialDeposit + secondDeposit + 2500000);
     },
 });
+
+Clarinet.test({
+    name: "Ensure owner can pause and unpause the protocol",
+    async fn(chain: Chain, accounts: Map<string, Account>) {
+        const deployer = accounts.get("deployer")!;
+        const wallet_1 = accounts.get("wallet_1")!;
+
+        // Check initially not paused
+        let status = chain.callReadOnlyFn("stackvault-protocol", "is-protocol-paused", [], wallet_1.address);
+        status.result.expectBool(false);
+
+        // Non-owner cannot pause
+        let block = chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "pause-protocol", [], wallet_1.address)
+        ]);
+        block.receipts[0].result.expectErr().expectUint(100); // ERR-NOT-AUTHORIZED
+
+        // Owner pauses
+        block = chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "pause-protocol", [], deployer.address)
+        ]);
+        block.receipts[0].result.expectOk().expectBool(true);
+
+        // Verify paused state
+        status = chain.callReadOnlyFn("stackvault-protocol", "is-protocol-paused", [], wallet_1.address);
+        status.result.expectBool(true);
+
+        // Owner resumes
+        block = chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "resume-protocol", [], deployer.address)
+        ]);
+        block.receipts[0].result.expectOk().expectBool(false);
+
+        status = chain.callReadOnlyFn("stackvault-protocol", "is-protocol-paused", [], wallet_1.address);
+        status.result.expectBool(false);
+    },
+});
+
+Clarinet.test({
+    name: "Ensure deposit, withdraw, and claim revert when paused while reads succeed",
+    async fn(chain: Chain, accounts: Map<string, Account>) {
+        const deployer = accounts.get("deployer")!;
+        const wallet_1 = accounts.get("wallet_1")!;
+        const depositAmount = 10000000; // 10 STX
+
+        // Deposit successfully before pause
+        chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(depositAmount)], wallet_1.address)
+        ]);
+
+        // Owner pauses
+        chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "pause-protocol", [], deployer.address)
+        ]);
+
+        // Operations should error
+        let block = chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(depositAmount)], wallet_1.address),
+            Tx.contractCall("stackvault-protocol", "withdraw", [types.uint(1000000)], wallet_1.address),
+            Tx.contractCall("stackvault-protocol", "claim-yield", [], wallet_1.address)
+        ]);
+
+        assertEquals(block.receipts.length, 3);
+        block.receipts[0].result.expectErr().expectUint(103); // ERR-PAUSED
+        block.receipts[1].result.expectErr().expectUint(103);
+        block.receipts[2].result.expectErr().expectUint(103);
+
+        // Read operations should still succeed
+        chain.callReadOnlyFn("stackvault-protocol", "get-balance", [types.principal(wallet_1.address)], wallet_1.address)
+            .result.expectOk().expectUint(depositAmount);
+            
+        // Wait blocks to accrue yield
+        chain.mineEmptyBlockUntil(10);
+        
+        // Accrued yield getter succeeds
+        let yieldRes = chain.callReadOnlyFn("stackvault-protocol", "get-accrued-yield", [types.principal(wallet_1.address)], wallet_1.address);
+        yieldRes.result.expectOk();
+
+        let totalLiqRes = chain.callReadOnlyFn("stackvault-protocol", "get-total-liquidity", [], wallet_1.address);
+        totalLiqRes.result.expectOk().expectUint(depositAmount);
+        
+        let pauseRes = chain.callReadOnlyFn("stackvault-protocol", "is-protocol-paused", [], wallet_1.address);
+        pauseRes.result.expectBool(true);
+    },
+});

@@ -18,18 +18,25 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault }) => {
   const [quickAmount, setQuickAmount] = useState<string>('');
-  const { depositSTX, fetchBalance, fetchTotalLiquidity, status, userBalance, totalLiquidity } = useVault();
+  const { depositSTX, refreshData, status, userBalance, totalLiquidity, accruedYield, isFetching } = useVault();
 
   useEffect(() => {
-    fetchBalance(userAddress);
-    fetchTotalLiquidity();
-  }, [userAddress, fetchBalance, fetchTotalLiquidity]);
+    // Initial fetch with loading state
+    refreshData(userAddress, true);
+
+    // Auto-refresh every 15 seconds silently
+    const intervalId = setInterval(() => {
+      refreshData(userAddress, false);
+    }, 15000);
+
+    return () => clearInterval(intervalId);
+  }, [userAddress, refreshData]);
 
   // Dynamic stats
   const stats = {
-    totalLiquidity: `${totalLiquidity.toLocaleString()} STX`,
-    userBalance: `${userBalance.toLocaleString()} STX`,
-    accruedYield: `${(userBalance * 0.05 / 365).toFixed(4)} STX`, // Daily yield estimate
+    totalLiquidity: isFetching ? "..." : `${totalLiquidity.toLocaleString(undefined, { maximumFractionDigits: 2 })} STX`,
+    userBalance: isFetching ? "..." : `${userBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} STX`,
+    accruedYield: isFetching ? "..." : `${accruedYield.toFixed(4)} STX`,
     apy: "5.00%",
   };
 

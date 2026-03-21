@@ -27,6 +27,8 @@ export const useVault = () => {
     const [error, setError] = useState<string | null>(null);
     const [userBalance, setUserBalance] = useState<number>(0);
     const [totalLiquidity, setTotalLiquidity] = useState<number>(0);
+    const [accruedYield, setAccruedYield] = useState<number>(0);
+    const [isFetching, setIsFetching] = useState<boolean>(true);
 
     const fetchBalance = useCallback(async (address: string) => {
         try {
@@ -66,6 +68,39 @@ export const useVault = () => {
         }
     }, []);
 
+    const fetchAccruedYield = useCallback(async (address: string) => {
+        try {
+            const response = await fetchCallReadOnlyFunction({
+                contractAddress: CONTRACT_ADDRESS,
+                contractName: CONTRACT_NAME,
+                functionName: 'get-accrued-yield',
+                functionArgs: [principalCV(address)],
+                senderAddress: address,
+            });
+            const result = cvToJSON(response);
+            const amount = parseInt(result.value.value) / 1000000;
+            setAccruedYield(amount);
+            return amount;
+        } catch (err) {
+            console.error('Error fetching accrued yield:', err);
+            return 0;
+        }
+    }, []);
+
+    const refreshData = useCallback(async (address?: string, showLoading: boolean = true) => {
+        if (showLoading) setIsFetching(true);
+        try {
+            const promises: Promise<any>[] = [fetchTotalLiquidity()];
+            if (address) {
+                promises.push(fetchBalance(address));
+                promises.push(fetchAccruedYield(address));
+            }
+            await Promise.all(promises);
+        } finally {
+            if (showLoading) setIsFetching(false);
+        }
+    }, [fetchTotalLiquidity, fetchBalance, fetchAccruedYield]);
+
     const mapError = (err: any): string => {
         const message = err.message || '';
         const match = message.match(/error u(\d+)/);
@@ -104,8 +139,7 @@ export const useVault = () => {
                     setStatus('success');
                     // Refresh data after a delay to allow for mempool update
                     setTimeout(() => {
-                        fetchBalance(address);
-                        fetchTotalLiquidity();
+                        refreshData(address, false);
                     }, 4000);
                 },
                 onCancel: () => {
@@ -142,8 +176,7 @@ export const useVault = () => {
                     setTxId(data.txId);
                     setStatus('success');
                     setTimeout(() => {
-                        fetchBalance(address);
-                        fetchTotalLiquidity();
+                        refreshData(address, false);
                     }, 4000);
                 },
                 onCancel: () => {
@@ -161,11 +194,15 @@ export const useVault = () => {
         withdrawSTX,
         fetchBalance,
         fetchTotalLiquidity,
+        fetchAccruedYield,
+        refreshData,
         status,
         txId,
         error,
         userBalance,
         totalLiquidity,
+        accruedYield,
+        isFetching,
         resetStatus: () => setStatus('idle')
     };
 };

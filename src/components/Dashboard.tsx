@@ -13,6 +13,7 @@ import Button from './Button';
 import TransactionHistory from './TransactionHistory';
 import { useVault } from '../hooks/useVault';
 import { useTransactionForm } from '../hooks/useTransactionForm';
+import CopyableAddress from './CopyableAddress';
 
 interface DashboardProps {
   userAddress: string;
@@ -57,17 +58,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
             <h2 style={{ fontSize: '3rem', fontWeight: '900', lineHeight: '1' }}>Protocol Analytics</h2>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Connected Wallet</p>
-            <p style={{ 
-              fontFamily: 'monospace', 
-              fontWeight: '600', 
-              background: 'var(--secondary)', 
-              padding: '0.5rem 1rem', 
-              borderRadius: '12px', 
-              border: '1px solid var(--border)' 
-            }}>
-              {userAddress.slice(0, 6)}...{userAddress.slice(-6)}
-            </p>
+            <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Connected Wallet</p>
+            <CopyableAddress address={userAddress} />
           </div>
         </div>
 

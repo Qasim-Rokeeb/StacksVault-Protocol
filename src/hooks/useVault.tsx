@@ -1,6 +1,7 @@
 import { useState, useCallback, createContext, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { openContractCall } from '@stacks/connect';
+import { STACKS_TESTNET } from '@stacks/network';
 import { 
   uintCV, 
   PostConditionMode, 
@@ -22,6 +23,8 @@ const ERROR_CODES: Record<number, string> = {
   101: 'Insufficient funds in vault',
   102: 'Minimum deposit is 1 STX',
 };
+
+const NETWORK = STACKS_TESTNET;
 
 export interface VaultContextType {
     depositSTX: (amountSTX: number) => Promise<void>;
@@ -57,6 +60,7 @@ export const VaultProvider = ({ children }: { children: ReactNode }) => {
                 functionName: 'get-balance',
                 functionArgs: [principalCV(address)],
                 senderAddress: address,
+                network: NETWORK,
             });
             const result = cvToJSON(response);
             const amount = parseInt(result.value.value) / 1000000;
@@ -76,6 +80,7 @@ export const VaultProvider = ({ children }: { children: ReactNode }) => {
                 functionName: 'get-total-liquidity',
                 functionArgs: [],
                 senderAddress: CONTRACT_ADDRESS,
+                network: NETWORK,
             });
             const result = cvToJSON(response);
             const amount = parseInt(result.value.value) / 1000000;
@@ -95,6 +100,7 @@ export const VaultProvider = ({ children }: { children: ReactNode }) => {
                 functionName: 'get-accrued-yield',
                 functionArgs: [principalCV(address)],
                 senderAddress: address,
+                network: NETWORK,
             });
             const result = cvToJSON(response);
             const amount = parseInt(result.value.value) / 1000000;
@@ -149,6 +155,7 @@ export const VaultProvider = ({ children }: { children: ReactNode }) => {
                 functionName: 'deposit-liquidity',
                 functionArgs: [uintCV(amountMicroSTX)],
                 postConditionMode: PostConditionMode.Deny,
+                network: NETWORK,
                 postConditions: [
                     Pc.principal(address).willSendEq(amountMicroSTX).ustx()
                 ],
@@ -190,6 +197,7 @@ export const VaultProvider = ({ children }: { children: ReactNode }) => {
                 functionName: 'withdraw',
                 functionArgs: [uintCV(amountMicroSTX)],
                 postConditionMode: PostConditionMode.Allow,
+                network: NETWORK,
                 onFinish: (data) => {
                     setTxId(data.txId);
                     setStatus('success');

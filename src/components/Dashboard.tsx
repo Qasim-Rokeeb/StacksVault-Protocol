@@ -63,7 +63,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
         transition={{ duration: 0.5 }}
       >
         {/* Header Section */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+        <div className="dash-header">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
               <span style={{ 
@@ -118,7 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
         </div>
 
         {/* Secondary Info Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+        <div className="dash-secondary-grid">
           <div style={{ 
             background: 'linear-gradient(135deg, var(--secondary) 0%, rgba(255, 90, 0, 0.05) 100%)', 
             padding: '2.5rem', 

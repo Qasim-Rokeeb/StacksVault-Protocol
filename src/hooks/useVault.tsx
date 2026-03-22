@@ -1,17 +1,15 @@
-import { useState, useCallback, createContext, useContext, useEffect } from 'react';
+import { useState, useCallback, createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import { openContractCall } from '@stacks/connect';
 import { STACKS_TESTNET } from '@stacks/network';
 import { 
   uintCV, 
   PostConditionMode, 
-  Pc,
-  principalCV,
-  fetchCallReadOnlyFunction,
-  cvToJSON
+  Pc
 } from '@stacks/transactions';
 import { userSession, useStacksWallet } from './useStacksWallet';
 import { toast } from 'react-hot-toast';
+import { useVaultMetrics } from './useVaultMetrics';
 
 export type TransactionStatus = 'idle' | 'pending' | 'success' | 'error';
 
@@ -45,86 +43,20 @@ export interface VaultContextType {
 const VaultContext = createContext<VaultContextType | undefined>(undefined);
 
 export const VaultProvider = ({ children }: { children: ReactNode }) => {
+    const { userAddress } = useStacksWallet();
+    const { 
+        userBalance, 
+        totalLiquidity, 
+        accruedYield, 
+        isFetching, 
+        refreshData, 
+        fetchBalance, 
+        fetchTotalLiquidity, 
+        fetchAccruedYield 
+    } = useVaultMetrics(userAddress);
+
     const [status, setStatus] = useState<TransactionStatus>('idle');
     const [txId, setTxId] = useState<string | null>(null);
-    const [userBalance, setUserBalance] = useState<number>(0);
-    const [totalLiquidity, setTotalLiquidity] = useState<number>(0);
-    const [accruedYield, setAccruedYield] = useState<number>(0);
-    const [isFetching, setIsFetching] = useState<boolean>(true);
-
-    const fetchBalance = useCallback(async (address: string) => {
-        try {
-            const response = await fetchCallReadOnlyFunction({
-                contractAddress: CONTRACT_ADDRESS,
-                contractName: CONTRACT_NAME,
-                functionName: 'get-balance',
-                functionArgs: [principalCV(address)],
-                senderAddress: address,
-                network: NETWORK,
-            });
-            const result = cvToJSON(response);
-            const amount = parseInt(result.value.value) / 1000000;
-            setUserBalance(amount);
-            return amount;
-        } catch (err) {
-            console.error('Error fetching balance:', err);
-            return 0;
-        }
-    }, []);
-
-    const fetchTotalLiquidity = useCallback(async () => {
-        try {
-            const response = await fetchCallReadOnlyFunction({
-                contractAddress: CONTRACT_ADDRESS,
-                contractName: CONTRACT_NAME,
-                functionName: 'get-total-liquidity',
-                functionArgs: [],
-                senderAddress: CONTRACT_ADDRESS,
-                network: NETWORK,
-            });
-            const result = cvToJSON(response);
-            const amount = parseInt(result.value.value) / 1000000;
-            setTotalLiquidity(amount);
-            return amount;
-        } catch (err) {
-            console.error('Error fetching total liquidity:', err);
-            return 0;
-        }
-    }, []);
-
-    const fetchAccruedYield = useCallback(async (address: string) => {
-        try {
-            const response = await fetchCallReadOnlyFunction({
-                contractAddress: CONTRACT_ADDRESS,
-                contractName: CONTRACT_NAME,
-                functionName: 'get-accrued-yield',
-                functionArgs: [principalCV(address)],
-                senderAddress: address,
-                network: NETWORK,
-            });
-            const result = cvToJSON(response);
-            const amount = parseInt(result.value.value) / 1000000;
-            setAccruedYield(amount);
-            return amount;
-        } catch (err) {
-            console.error('Error fetching accrued yield:', err);
-            return 0;
-        }
-    }, []);
-
-    const refreshData = useCallback(async (address?: string, showLoading: boolean = true) => {
-        if (showLoading) setIsFetching(true);
-        try {
-            const promises: Promise<any>[] = [fetchTotalLiquidity()];
-            if (address) {
-                promises.push(fetchBalance(address));
-                promises.push(fetchAccruedYield(address));
-            }
-            await Promise.all(promises);
-        } finally {
-            if (showLoading) setIsFetching(false);
-        }
-    }, [fetchTotalLiquidity, fetchBalance, fetchAccruedYield]);
 
     const mapError = (err: any): string => {
         const message = err.message || '';
@@ -176,7 +108,7 @@ export const VaultProvider = ({ children }: { children: ReactNode }) => {
             toast.error(mapError(err));
             setStatus('error');
         }
-    }, [fetchBalance, fetchTotalLiquidity]);
+    }, [refreshData]);
 
     const withdrawSTX = useCallback(async (amountSTX: number) => {
         if (!userSession.isUserSignedIn()) {
@@ -214,17 +146,9 @@ export const VaultProvider = ({ children }: { children: ReactNode }) => {
             toast.error(mapError(err));
             setStatus('error');
         }
-    }, [fetchBalance, fetchTotalLiquidity]);
+    }, [refreshData]);
 
-    const { userAddress } = useStacksWallet();
 
-    useEffect(() => {
-        refreshData(userAddress || undefined, true);
-        const intervalId = setInterval(() => {
-            refreshData(userAddress || undefined, false);
-        }, 15000);
-        return () => clearInterval(intervalId);
-    }, [userAddress, refreshData]);
 
     const value = {
         depositSTX,

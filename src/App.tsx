@@ -37,7 +37,16 @@ const Navbar: React.FC<NavbarProps> = ({
         <Shield size={24} fill="var(--primary)" />
         Stack<span>Vault</span>
       </div>
-      <nav className="nav-links">
+      <nav className="nav-links" style={{ alignItems: 'center' }}>
+        {userAddress && (userAddress.startsWith('SP') || userAddress.startsWith('SM')) && (
+          <div style={{ display: 'flex', alignItems: 'center', color: '#ef4444', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(239, 68, 68, 0.1)', padding: '0.35rem 0.75rem', borderRadius: '100px', border: '1px solid rgba(239,68,68,0.3)' }}>
+            ⚠️ Unsupported Network (Switch to Testnet)
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--muted)', marginRight: '1rem' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#eab308' }}></div>
+          Testnet
+        </div>
         {userAddress ? (
           <>
             <button 

@@ -39,7 +39,7 @@ const StatCard: React.FC<StatCardProps> = ({
           color: 'var(--primary)', 
           background: 'rgba(255, 90, 0, 0.1)', 
           padding: '0.75rem', 
-          borderRadius: '12px' 
+          borderRadius: '14px' 
         }}>
           {icon}
         </div>

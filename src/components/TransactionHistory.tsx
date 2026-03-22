@@ -9,6 +9,14 @@ interface TransactionHistoryProps {
 
 const TransactionHistory: React.FC<TransactionHistoryProps> = ({ userAddress }) => {
   const { transactions, isLoading, error } = useTransactionHistory(userAddress);
+  const [filter, setFilter] = React.useState<'all' | 'deposit' | 'withdraw'>('all');
+
+  const filteredTransactions = React.useMemo(() => {
+    if (filter === 'all') {
+      return transactions;
+    }
+    return transactions.filter((tx) => tx.type === filter);
+  }, [transactions, filter]);
 
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
@@ -25,31 +33,57 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ userAddress }) 
     }} aria-labelledby="transaction-history-title">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h3 id="transaction-history-title" style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Clock size={24} style={{ color: 'var(--primary)' }} /> Activity History
+          <Clock size={24} style={{ color: 'var(--primary)' }} /> Indexed Contract Events
         </h3>
         {isLoading && <Loader2 size={20} className="animate-spin text-muted" aria-hidden="true" />}
       </div>
 
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }} role="tablist" aria-label="Event type filter">
+        {[{ key: 'all', label: 'All' }, { key: 'deposit', label: 'Deposits' }, { key: 'withdraw', label: 'Withdrawals' }].map((item) => {
+          const isActive = filter === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setFilter(item.key as 'all' | 'deposit' | 'withdraw')}
+              style={{
+                padding: '0.4rem 0.8rem',
+                borderRadius: '999px',
+                border: '1px solid var(--border)',
+                color: isActive ? 'var(--primary)' : 'var(--muted)',
+                background: isActive ? 'rgba(255, 90, 0, 0.12)' : 'transparent',
+                fontWeight: 700,
+                fontSize: '0.8rem'
+              }}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+
       {error && (
         <div role="alert" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '12px', marginBottom: '1.5rem' }}>
-          Failed to load transactions: {error}
+          Failed to load indexed events: {error}
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} role="status" aria-live="polite">
         <AnimatePresence>
-          {transactions.length === 0 && !isLoading && !error && (
+          {filteredTransactions.length === 0 && !isLoading && !error && (
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--muted)' }}
             >
-              No recent transactions found.
+              No indexed contract events found for this filter.
             </motion.div>
           )}
 
-          <ul aria-label="Recent transactions" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {transactions.map((tx, idx) => (
+          <ul aria-label="Recent indexed contract events" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {filteredTransactions.map((tx, idx) => (
               <motion.li
               key={tx.id}
               initial={{ opacity: 0, y: 10 }}
@@ -81,10 +115,14 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ userAddress }) 
 
               <div>
                 <h4 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.25rem', textTransform: 'capitalize' }}>
-                  {tx.type} STX
+                  {tx.type} Event
                 </h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem', color: 'var(--muted)' }}>
                   <span>{formatDate(tx.timestamp)}</span>
+                  <span>Block #{tx.blockHeight || 'pending'}</span>
+                  <span>
+                    {tx.eventIndex >= 0 ? `Event #${tx.eventIndex}` : 'Pending index'}
+                  </span>
                   <span style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -102,6 +140,9 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ userAddress }) 
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.25rem' }}>
                   {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toLocaleString()} STX
+                </div>
+                <div style={{ marginBottom: '0.25rem', fontSize: '0.75rem', color: tx.source === 'indexed_event' ? '#10b981' : 'var(--muted)' }}>
+                  {tx.source === 'indexed_event' ? 'Indexed event' : 'Contract-call fallback'}
                 </div>
                 <a 
                   href={tx.explorerUrl} 

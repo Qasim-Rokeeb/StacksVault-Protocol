@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import StatCard from './StatCard';
+import Button from './Button';
 import TransactionHistory from './TransactionHistory';
 import { useVault } from '../hooks/useVault';
 
@@ -151,14 +152,15 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
               </div>
             </div>
 
-            <button 
+            <Button 
               onClick={handleQuickDeposit}
-              disabled={status === 'pending'}
-              className="btn btn-primary" 
-              style={{ padding: '1rem 2rem', width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: status === 'pending' ? 0.7 : 1 }}
+              isLoading={status === 'pending'}
+              variant="primary" 
+              size="lg"
+              fullWidth
             >
-              {status === 'pending' ? 'Processing...' : 'Deposit Now'} <ArrowRight size={18} />
-            </button>
+              Deposit Now <ArrowRight size={18} />
+            </Button>
 
             {status !== 'idle' && (
               <div style={{ 

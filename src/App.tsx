@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { useStacksWallet } from './hooks/useStacksWallet';
 import Vault from './components/Vault';
 import Dashboard from './components/Dashboard';
+import Button from './components/Button';
 import { Toaster } from 'react-hot-toast';
 
 interface NavbarProps {
@@ -62,18 +63,17 @@ const Navbar: React.FC<NavbarProps> = ({
         )}
       </nav>
       {userAddress ? (
-        <button className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem' }} onClick={onLogout}>
+        <Button variant="secondary" onClick={onLogout}>
           Disconnect
-        </button>
+        </Button>
       ) : (
-        <button 
-          className="btn btn-primary" 
-          style={{ padding: '0.5rem 1.5rem', opacity: isConnecting ? 0.7 : 1 }} 
+        <Button 
+          variant="primary" 
           onClick={onConnect}
-          disabled={isConnecting}
+          isLoading={isConnecting}
         >
-          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-        </button>
+          Connect Wallet
+        </Button>
       )}
     </div>
   </header>
@@ -102,18 +102,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onConnect, isConnecting, erro
             StackVault is a next-generation liquidity protocol built on the security of Bitcoin. Deposit STX, provide liquidity, and earn returns in a decentralized vault.
           </p>
           <div className="hero-btns">
-            <button 
-              className="btn btn-primary" 
+            <Button 
+              variant="primary" 
+              size="lg"
               onClick={onConnect}
-              disabled={isConnecting}
-              style={{ opacity: isConnecting ? 0.7 : 1 }}
+              isLoading={isConnecting}
             >
-              {isConnecting ? 'Connecting...' : 'Launch Protocol'} 
-              {!isConnecting && <ArrowRight size={18} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />}
-            </button>
-            <button className="btn btn-secondary">
+              Launch Protocol {!isConnecting && <ArrowRight size={18} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />}
+            </Button>
+            <Button variant="secondary" size="lg">
               View Whitepaper
-            </button>
+            </Button>
           </div>
           {error && (
             <p style={{ color: '#ef4444', marginTop: '1rem', fontSize: '0.875rem' }}>

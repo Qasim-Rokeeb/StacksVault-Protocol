@@ -267,3 +267,62 @@ Clarinet.test({
         pauseRes.result.expectBool(true);
     },
 });
+
+Clarinet.test({
+    name: "Ensure multiple users can interact simultaneously maintaining correct states",
+    async fn(chain: Chain, accounts: Map<string, Account>) {
+        const wallet_1 = accounts.get("wallet_1")!;
+        const wallet_2 = accounts.get("wallet_2")!;
+        const wallet_3 = accounts.get("wallet_3")!;
+        
+        const depositAmount1 = 10000000; // 10 STX
+        const depositAmount2 = 20000000; // 20 STX
+        const depositAmount3 = 50000000; // 50 STX
+
+        // 1. All three users deposit in the same block
+        let block = chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(depositAmount1)], wallet_1.address),
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(depositAmount2)], wallet_2.address),
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(depositAmount3)], wallet_3.address)
+        ]);
+        
+        block.receipts[0].result.expectOk().expectBool(true);
+        block.receipts[1].result.expectOk().expectBool(true);
+        block.receipts[2].result.expectOk().expectBool(true);
+
+        // Verify total liquidity
+        let totalLiq = chain.callReadOnlyFn("stackvault-protocol", "get-total-liquidity", [], wallet_1.address);
+        totalLiq.result.expectOk().expectUint(depositAmount1 + depositAmount2 + depositAmount3);
+
+        // 2. Mine blocks to simulate time passing (1 year roughly)
+        chain.mineEmptyBlockUntil(52560 + block.height);
+
+        // 3. Wallet 1 and 2 withdraw, Wallet 3 deposits more
+        let block2 = chain.mineBlock([
+            Tx.contractCall("stackvault-protocol", "withdraw", [types.uint(depositAmount1)], wallet_1.address),
+            Tx.contractCall("stackvault-protocol", "withdraw", [types.uint(10000000)], wallet_2.address), // partial withdraw
+            Tx.contractCall("stackvault-protocol", "deposit-liquidity", [types.uint(10000000)], wallet_3.address)
+        ]);
+
+        block2.receipts[0].result.expectOk().expectBool(true);
+        block2.receipts[1].result.expectOk().expectBool(true);
+        block2.receipts[2].result.expectOk().expectBool(true);
+
+        // 4. Verify correct final balances for all users
+        let bal1 = chain.callReadOnlyFn("stackvault-protocol", "get-balance", [types.principal(wallet_1.address)], wallet_1.address);
+        bal1.result.expectOk().expectUint(0); // Withdrew all
+
+        let bal2 = chain.callReadOnlyFn("stackvault-protocol", "get-balance", [types.principal(wallet_2.address)], wallet_2.address);
+        bal2.result.expectOk().expectUint(depositAmount2 - 10000000); // Remaining balance
+
+        let bal3 = chain.callReadOnlyFn("stackvault-protocol", "get-balance", [types.principal(wallet_3.address)], wallet_3.address);
+        bal3.result.expectOk().expectUint(depositAmount3 + 10000000); // Increased balance
+
+        // Verify accrued yield is reset for users who claimed (during withdraw or deposit)
+        let yield1 = chain.callReadOnlyFn("stackvault-protocol", "get-accrued-yield", [types.principal(wallet_1.address)], wallet_1.address);
+        yield1.result.expectOk().expectUint(0); // Reset because they withdrew
+
+        let yield3 = chain.callReadOnlyFn("stackvault-protocol", "get-accrued-yield", [types.principal(wallet_3.address)], wallet_3.address);
+        yield3.result.expectOk().expectUint(0); // Reset after action claims yield
+    },
+});

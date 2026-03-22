@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   Wallet, 
   TrendingUp, 
@@ -12,6 +12,7 @@ import StatCard from './StatCard';
 import Button from './Button';
 import TransactionHistory from './TransactionHistory';
 import { useVault } from '../hooks/useVault';
+import { useTransactionForm } from '../hooks/useTransactionForm';
 
 interface DashboardProps {
   userAddress: string;
@@ -19,9 +20,8 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault }) => {
-  const [quickAmount, setQuickAmount] = useState<string>('');
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const { depositSTX, status, userBalance, totalLiquidity, accruedYield, isFetching } = useVault();
+  const { status, userBalance, totalLiquidity, accruedYield, isFetching } = useVault();
+  const { amount: quickAmount, handleAmountChange, validationError, submitTransaction } = useTransactionForm('deposit');
 
 
 
@@ -31,28 +31,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
     userBalance: isFetching ? "..." : `${userBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} STX`,
     accruedYield: isFetching ? "..." : `${accruedYield.toFixed(4)} STX`,
     apy: "5.00%",
-  };
-
-  useEffect(() => {
-    if (!quickAmount) {
-      setValidationError(null);
-      return;
-    }
-    const val = parseFloat(quickAmount);
-    if (isNaN(val) || val <= 0) {
-      setValidationError("Please enter a valid amount");
-    } else if (val < 1) {
-      setValidationError("Minimum deposit is 1 STX");
-    } else {
-      setValidationError(null);
-    }
-  }, [quickAmount]);
-
-  const handleQuickDeposit = async () => {
-    if (validationError || !quickAmount) return;
-    const val = parseFloat(quickAmount);
-    await depositSTX(val);
-    if (status === 'success') setQuickAmount('');
   };
 
   return (
@@ -140,12 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
                   pattern="^[0-9]*[.,]?[0-9]*$"
                   placeholder="1.00"
                   value={quickAmount}
-                  onChange={(e) => {
-                    let val = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                    if (val.split('.').length > 2) return;
-                    if (val.includes('.') && val.split('.')[1].length > 6) return;
-                    setQuickAmount(val);
-                  }}
+                  onChange={(e) => handleAmountChange(e.target.value)}
                   style={{ 
                     width: '100%', 
                     padding: '1rem 1.25rem', 
@@ -168,7 +141,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
             </div>
 
             <Button 
-              onClick={handleQuickDeposit}
+              onClick={submitTransaction}
               isLoading={status === 'pending'}
               disabled={!!validationError || !quickAmount}
               variant="primary" 

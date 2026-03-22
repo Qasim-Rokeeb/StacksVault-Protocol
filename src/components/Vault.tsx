@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { 
   ArrowDownCircle, 
   ArrowUpCircle,
@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from './Button';
 import { useVault } from '../hooks/useVault';
+import { useTransactionForm } from '../hooks/useTransactionForm';
 
 interface VaultProps {
   userAddress: string;
@@ -21,19 +22,18 @@ interface VaultProps {
 }
 
 const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
-  const [amount, setAmount] = useState<string>('');
-  const [isDepositing, setIsDepositing] = useState(true);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  
+  const { status, txId, userBalance, totalLiquidity, resetStatus } = useVault();
   const { 
-    depositSTX, 
-    withdrawSTX, 
-    status, 
-    txId, 
-    userBalance, 
-    totalLiquidity, 
-    resetStatus 
-  } = useVault();
+    mode, 
+    setMode, 
+    amount, 
+    setAmount, 
+    handleAmountChange, 
+    validationError, 
+    submitTransaction 
+  } = useTransactionForm('deposit');
+  
+  const isDepositing = mode === 'deposit';
 
 
   useEffect(() => {
@@ -45,44 +45,6 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
       return () => clearTimeout(timer);
     }
   }, [status, resetStatus]);
-
-  useEffect(() => {
-    if (!amount) {
-      setValidationError(null);
-      return;
-    }
-    
-    const val = parseFloat(amount);
-    if (isNaN(val) || val <= 0) {
-      setValidationError("Please enter a valid amount greater than 0");
-      return;
-    }
-
-    if (isDepositing) {
-      if (val < 1) {
-        setValidationError("Minimum deposit is 1 STX");
-      } else {
-        setValidationError(null);
-      }
-    } else {
-      if (val > userBalance) {
-        setValidationError(`Insufficient balance. You have ${userBalance} STX.`);
-      } else {
-        setValidationError(null);
-      }
-    }
-  }, [amount, isDepositing, userBalance]);
-
-  const handleAction = async () => {
-    if (validationError || !amount) return;
-    const val = parseFloat(amount);
-    
-    if (isDepositing) {
-      await depositSTX(val);
-    } else {
-      await withdrawSTX(val);
-    }
-  };
 
   return (
     <div className="container" style={{ paddingTop: '4rem', paddingBottom: '8rem' }}>
@@ -128,7 +90,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
             <div style={{ background: 'var(--secondary)', borderRadius: '32px', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
                 <button 
-                  onClick={() => setIsDepositing(true)}
+                  onClick={() => setMode('deposit')}
                   style={{ 
                     flex: 1, 
                     padding: '1.5rem', 
@@ -142,7 +104,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                   Deposit
                 </button>
                 <button 
-                  onClick={() => setIsDepositing(false)}
+                  onClick={() => setMode('withdraw')}
                   style={{ 
                     flex: 1, 
                     padding: '1.5rem', 
@@ -172,12 +134,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                       pattern="^[0-9]*[.,]?[0-9]*$"
                       placeholder="0.00"
                       value={amount}
-                      onChange={(e) => {
-                        let val = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                        if (val.split('.').length > 2) return;
-                        if (val.includes('.') && val.split('.')[1].length > 6) return;
-                        setAmount(val);
-                      }}
+                      onChange={(e) => handleAmountChange(e.target.value)}
                       style={{ 
                         width: '100%', 
                         padding: '2rem', 
@@ -220,7 +177,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                 </div>
 
                 <Button 
-                  onClick={handleAction}
+                  onClick={submitTransaction}
                   isLoading={status === 'pending'}
                   disabled={!!validationError || !amount}
                   variant="primary" 

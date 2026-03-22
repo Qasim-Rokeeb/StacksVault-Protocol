@@ -135,10 +135,17 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ position: 'relative' }}>
                 <input 
-                  type="number" 
+                  type="text" 
+                  inputMode="decimal"
+                  pattern="^[0-9]*[.,]?[0-9]*$"
                   placeholder="1.00"
                   value={quickAmount}
-                  onChange={(e) => setQuickAmount(e.target.value)}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                    if (val.split('.').length > 2) return;
+                    if (val.includes('.') && val.split('.')[1].length > 6) return;
+                    setQuickAmount(val);
+                  }}
                   style={{ 
                     width: '100%', 
                     padding: '1rem 1.25rem', 

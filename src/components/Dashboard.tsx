@@ -20,6 +20,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault }) => {
   const [quickAmount, setQuickAmount] = useState<string>('');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const { depositSTX, refreshData, status, userBalance, totalLiquidity, accruedYield, isFetching } = useVault();
 
   useEffect(() => {
@@ -42,12 +43,24 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
     apy: "5.00%",
   };
 
-  const handleQuickDeposit = async () => {
-    const val = parseFloat(quickAmount);
-    if (isNaN(val) || val < 1) {
-      alert("Minimum deposit is 1 STX");
+  useEffect(() => {
+    if (!quickAmount) {
+      setValidationError(null);
       return;
     }
+    const val = parseFloat(quickAmount);
+    if (isNaN(val) || val <= 0) {
+      setValidationError("Please enter a valid amount");
+    } else if (val < 1) {
+      setValidationError("Minimum deposit is 1 STX");
+    } else {
+      setValidationError(null);
+    }
+  }, [quickAmount]);
+
+  const handleQuickDeposit = async () => {
+    if (validationError || !quickAmount) return;
+    const val = parseFloat(quickAmount);
     await depositSTX(val);
     if (status === 'success') setQuickAmount('');
   };
@@ -140,7 +153,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
                     width: '100%', 
                     padding: '1rem 1.25rem', 
                     background: 'rgba(0,0,0,0.2)', 
-                    border: '1px solid var(--border)', 
+                    border: validationError ? '2px solid #ef4444' : '1px solid var(--border)', 
                     borderRadius: '12px',
                     color: 'white',
                     fontSize: '1.25rem',
@@ -150,11 +163,17 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
                 />
                 <span style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', fontWeight: '700', color: 'var(--muted)' }}>STX</span>
               </div>
+              {validationError && (
+                <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.75rem', fontWeight: '500' }}>
+                  {validationError}
+                </div>
+              )}
             </div>
 
             <Button 
               onClick={handleQuickDeposit}
               isLoading={status === 'pending'}
+              disabled={!!validationError || !quickAmount}
               variant="primary" 
               size="lg"
               fullWidth

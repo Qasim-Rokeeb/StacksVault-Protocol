@@ -14,12 +14,24 @@ export interface StacksWalletState {
 }
 
 export const useStacksWallet = () => {
-    const [state, setState] = useState<StacksWalletState>({
-        userData: null,
-        userAddress: null,
-        isConnected: false,
-        isConnecting: false,
-        error: null,
+    const [state, setState] = useState<StacksWalletState>(() => {
+        let isConnected = false;
+        let userData = null;
+        let userAddress = null;
+
+        if (userSession.isUserSignedIn()) {
+            userData = userSession.loadUserData();
+            userAddress = userData.profile.stxAddress?.mainnet || userData.profile.stxAddress?.testnet || null;
+            isConnected = true;
+        }
+
+        return {
+            userData,
+            userAddress,
+            isConnected,
+            isConnecting: false,
+            error: null,
+        };
     });
 
     const updateState = useCallback((userData: UserData | null) => {

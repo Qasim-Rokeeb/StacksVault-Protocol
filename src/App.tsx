@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStacksWallet } from './hooks/useStacksWallet';
+import { VaultProvider } from './hooks/useVault';
 import Vault from './components/Vault';
 import Dashboard from './components/Dashboard';
 import Button from './components/Button';
@@ -200,30 +201,32 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
-      <Navbar 
-        onConnect={handleConnect} 
-        userAddress={userAddress} 
-        onLogout={handleDisconnect} 
-        isConnecting={isConnecting}
-        activeView={userAddress ? activeView : 'landing'}
-        onNavigate={(view) => setActiveView(view)}
-      />
-      
-      <Toaster position="bottom-right" toastOptions={{
-        style: {
-          background: '#333',
-          color: '#fff',
-          borderRadius: '12px',
-        },
-      }} />
-      
-      {renderContent()}
+      <VaultProvider>
+        <Navbar 
+          onConnect={handleConnect} 
+          userAddress={userAddress} 
+          onLogout={handleDisconnect} 
+          isConnecting={isConnecting}
+          activeView={userAddress ? activeView : 'landing'}
+          onNavigate={(view) => setActiveView(view)}
+        />
+        
+        <Toaster position="bottom-right" toastOptions={{
+          style: {
+            background: '#333',
+            color: '#fff',
+            borderRadius: '12px',
+          },
+        }} />
+        
+        {renderContent()}
 
-      <footer>
-        <div className="container" style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
-          <p>© 2026 StackVault Protocol. Built on Stacks (Bitcoin L2).</p>
-        </div>
-      </footer>
+        <footer>
+          <div className="container" style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
+            <p>© 2026 StackVault Protocol. Built on Stacks (Bitcoin L2).</p>
+          </div>
+        </footer>
+      </VaultProvider>
     </div>
   );
 };

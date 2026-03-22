@@ -21,19 +21,9 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault }) => {
   const [quickAmount, setQuickAmount] = useState<string>('');
   const [validationError, setValidationError] = useState<string | null>(null);
-  const { depositSTX, refreshData, status, userBalance, totalLiquidity, accruedYield, isFetching } = useVault();
+  const { depositSTX, status, userBalance, totalLiquidity, accruedYield, isFetching } = useVault();
 
-  useEffect(() => {
-    // Initial fetch with loading state
-    refreshData(userAddress, true);
 
-    // Auto-refresh every 15 seconds silently
-    const intervalId = setInterval(() => {
-      refreshData(userAddress, false);
-    }, 15000);
-
-    return () => clearInterval(intervalId);
-  }, [userAddress, refreshData]);
 
   // Dynamic stats
   const stats = {

@@ -28,8 +28,6 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
   const { 
     depositSTX, 
     withdrawSTX, 
-    fetchBalance, 
-    fetchTotalLiquidity, 
     status, 
     txId, 
     userBalance, 
@@ -37,10 +35,6 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
     resetStatus 
   } = useVault();
 
-  useEffect(() => {
-    fetchBalance(userAddress);
-    fetchTotalLiquidity();
-  }, [userAddress, fetchBalance, fetchTotalLiquidity]);
 
   useEffect(() => {
     if (status === 'success') {

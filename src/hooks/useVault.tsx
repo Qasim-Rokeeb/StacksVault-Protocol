@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, createContext, useContext, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { openContractCall } from '@stacks/connect';
 import { 
   uintCV, 
@@ -8,7 +9,7 @@ import {
   fetchCallReadOnlyFunction,
   cvToJSON
 } from '@stacks/transactions';
-import { userSession } from './useStacksWallet';
+import { userSession, useStacksWallet } from './useStacksWallet';
 import { toast } from 'react-hot-toast';
 
 export type TransactionStatus = 'idle' | 'pending' | 'success' | 'error';
@@ -22,7 +23,25 @@ const ERROR_CODES: Record<number, string> = {
   102: 'Minimum deposit is 1 STX',
 };
 
-export const useVault = () => {
+export interface VaultContextType {
+    depositSTX: (amountSTX: number) => Promise<void>;
+    withdrawSTX: (amountSTX: number) => Promise<void>;
+    fetchBalance: (address: string) => Promise<number>;
+    fetchTotalLiquidity: () => Promise<number>;
+    fetchAccruedYield: (address: string) => Promise<number>;
+    refreshData: (address?: string, showLoading?: boolean) => Promise<void>;
+    status: TransactionStatus;
+    txId: string | null;
+    userBalance: number;
+    totalLiquidity: number;
+    accruedYield: number;
+    isFetching: boolean;
+    resetStatus: () => void;
+}
+
+const VaultContext = createContext<VaultContextType | undefined>(undefined);
+
+export const VaultProvider = ({ children }: { children: ReactNode }) => {
     const [status, setStatus] = useState<TransactionStatus>('idle');
     const [txId, setTxId] = useState<string | null>(null);
     const [userBalance, setUserBalance] = useState<number>(0);
@@ -189,7 +208,17 @@ export const useVault = () => {
         }
     }, [fetchBalance, fetchTotalLiquidity]);
 
-    return {
+    const { userAddress } = useStacksWallet();
+
+    useEffect(() => {
+        refreshData(userAddress || undefined, true);
+        const intervalId = setInterval(() => {
+            refreshData(userAddress || undefined, false);
+        }, 15000);
+        return () => clearInterval(intervalId);
+    }, [userAddress, refreshData]);
+
+    const value = {
         depositSTX,
         withdrawSTX,
         fetchBalance,
@@ -204,4 +233,12 @@ export const useVault = () => {
         isFetching,
         resetStatus: () => setStatus('idle')
     };
+
+    return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>;
+};
+
+export const useVault = () => {
+    const context = useContext(VaultContext);
+    if (!context) throw new Error('useVault must be used within VaultProvider');
+    return context;
 };

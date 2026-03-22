@@ -32,14 +32,16 @@ const CopyableAddress: React.FC<CopyableAddressProps> = ({ address }) => {
       fontFamily: 'monospace', 
       fontWeight: '600',
       fontSize: '0.85rem'
-    }}>
-      <span>{address.slice(0, 6)}...{address.slice(-6)}</span>
+    }} aria-label="Connected wallet address">
+      <span aria-label={`Wallet address ${address}`}>{address.slice(0, 6)}...{address.slice(-6)}</span>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.25rem', borderLeft: '1px solid var(--border)', paddingLeft: '0.4rem' }}>
         <button 
+          type="button"
           onClick={handleCopy}
           style={{ background: 'none', border: 'none', color: copied ? '#10b981' : 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0.1rem' }}
           title="Copy Address"
+          aria-label="Copy wallet address"
         >
           {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
@@ -49,6 +51,7 @@ const CopyableAddress: React.FC<CopyableAddressProps> = ({ address }) => {
           rel="noopener noreferrer"
           style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center', padding: '0.1rem' }}
           title="View on Explorer"
+          aria-label="View wallet address in explorer (opens in a new tab)"
         >
           <ExternalLink size={14} />
         </a>

@@ -56,6 +56,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        type={props.type ?? 'button'}
         className={`btn ${getVariantClass()} ${className}`}
         disabled={disabled || isLoading}
         style={mergedStyle}

@@ -16,27 +16,27 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ userAddress }) 
   };
 
   return (
-    <div style={{ 
+    <section style={{ 
       background: 'var(--secondary)', 
       padding: '2.5rem', 
       borderRadius: '32px', 
       border: '1px solid var(--border)',
       marginTop: '2rem'
-    }}>
+    }} aria-labelledby="transaction-history-title">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h3 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <h3 id="transaction-history-title" style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Clock size={24} style={{ color: 'var(--primary)' }} /> Activity History
         </h3>
-        {isLoading && <Loader2 size={20} className="animate-spin text-muted" />}
+        {isLoading && <Loader2 size={20} className="animate-spin text-muted" aria-hidden="true" />}
       </div>
 
       {error && (
-        <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '12px', marginBottom: '1.5rem' }}>
+        <div role="alert" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '12px', marginBottom: '1.5rem' }}>
           Failed to load transactions: {error}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} role="status" aria-live="polite">
         <AnimatePresence>
           {transactions.length === 0 && !isLoading && !error && (
             <motion.div 
@@ -48,8 +48,9 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ userAddress }) 
             </motion.div>
           )}
 
-          {transactions.map((tx, idx) => (
-            <motion.div
+          <ul aria-label="Recent transactions" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {transactions.map((tx, idx) => (
+              <motion.li
               key={tx.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -106,16 +107,18 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ userAddress }) 
                   href={tx.explorerUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
+                  aria-label={`View ${tx.type} transaction in explorer (opens in a new tab)`}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', color: 'var(--muted)', textDecoration: 'none' }}
                 >
                   Explorer <ExternalLink size={12} />
                 </a>
               </div>
-            </motion.div>
-          ))}
+              </motion.li>
+            ))}
+          </ul>
         </AnimatePresence>
       </div>
-    </div>
+    </section>
   );
 };
 

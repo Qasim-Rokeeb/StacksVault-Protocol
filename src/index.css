@@ -64,6 +64,9 @@ button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  border: none;
+  background: none;
+  color: inherit;
 }
 
 .logo span {
@@ -83,6 +86,31 @@ button {
 
 .nav-link:hover {
   color: var(--foreground);
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 1rem;
+  z-index: 1000;
+  background: var(--primary);
+  color: #fff;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(255, 90, 0, 0.65);
+  outline-offset: 2px;
 }
 
 /* Hero Section */

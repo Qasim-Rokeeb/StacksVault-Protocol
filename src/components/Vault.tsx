@@ -12,6 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Button from './Button';
 import { useVault } from '../hooks/useVault';
 
 interface VaultProps {
@@ -94,9 +95,9 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
             <h2 style={{ fontSize: '3rem', fontWeight: '900', lineHeight: '1' }}>Vault Manager</h2>
           </div>
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem' }}>
-            <button className="btn btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={onLogout}>
+            <Button variant="secondary" size="sm" onClick={onLogout}>
               Disconnect
-            </button>
+            </Button>
             <div>
               <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Connected Wallet</p>
               <p style={{ fontFamily: 'monospace', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--secondary)', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
@@ -192,25 +193,18 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                   </div>
                 </div>
 
-                <button 
+                <Button 
                   onClick={handleAction}
-                  disabled={status === 'pending'}
-                  className="btn btn-primary" 
-                  style={{ 
-                    width: '100%', 
-                    padding: '1.5rem', 
-                    fontSize: '1.25rem', 
-                    borderRadius: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.75rem',
-                    opacity: status === 'pending' ? 0.7 : 1
-                  }}
+                  isLoading={status === 'pending'}
+                  variant="primary" 
+                  size="lg"
+                  fullWidth
+                  style={{ borderRadius: '20px' }}
                 >
-                  {status === 'pending' ? <Loader2 className="animate-spin" /> : (isDepositing ? <ArrowDownCircle /> : <ArrowUpCircle />)}
+                  {isDepositing && status !== 'pending' && <ArrowDownCircle />}
+                  {!isDepositing && status !== 'pending' && <ArrowUpCircle />}
                   {status === 'pending' ? 'Processing...' : (isDepositing ? 'Confirm Deposit' : 'Confirm Withdrawal')}
-                </button>
+                </Button>
 
                 <AnimatePresence>
                   {status !== 'idle' && (

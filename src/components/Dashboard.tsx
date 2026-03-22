@@ -35,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
   };
 
   return (
-    <div className="container" style={{ paddingTop: '4rem', paddingBottom: '8rem' }}>
+    <section className="container" style={{ paddingTop: '4rem', paddingBottom: '8rem' }} aria-labelledby="dashboard-title">
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -55,7 +55,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
                 letterSpacing: '0.05em'
               }}>DASHBOARD OVERVIEW</span>
             </div>
-            <h2 style={{ fontSize: '3rem', fontWeight: '900', lineHeight: '1' }}>Protocol Analytics</h2>
+            <h2 id="dashboard-title" style={{ fontSize: '3rem', fontWeight: '900', lineHeight: '1' }}>Protocol Analytics</h2>
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Connected Wallet</p>
@@ -89,28 +89,41 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
 
         {/* Secondary Info Grid */}
         <div className="dash-secondary-grid">
-          <div style={{ 
+          <section style={{ 
             background: 'linear-gradient(135deg, var(--secondary) 0%, rgba(255, 90, 0, 0.05) 100%)', 
             padding: '2.5rem', 
             borderRadius: '32px', 
             border: '1px solid var(--border)' 
-          }}>
+          }} aria-labelledby="quick-deposit-title">
             <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Zap size={24} style={{ color: 'var(--primary)' }} /> Quick Deposit
+              <Zap size={24} style={{ color: 'var(--primary)' }} /> <span id="quick-deposit-title">Quick Deposit</span>
             </h3>
             <p style={{ color: 'var(--muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
               Instantly add liquidity to the vault. Minimum deposit is 1 STX.
             </p>
             
-            <div style={{ marginBottom: '1.5rem' }}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitTransaction();
+              }}
+              aria-describedby={validationError ? 'quick-deposit-error' : undefined}
+            >
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="quick-deposit-amount" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--muted)', fontSize: '0.875rem' }}>
+                  Deposit amount in STX
+                </label>
               <div style={{ position: 'relative' }}>
                 <input 
+                  id="quick-deposit-amount"
                   type="text" 
                   inputMode="decimal"
                   pattern="^[0-9]*[.,]?[0-9]*$"
                   placeholder="1.00"
                   value={quickAmount}
                   onChange={(e) => handleAmountChange(e.target.value)}
+                  aria-invalid={!!validationError}
+                  aria-describedby={validationError ? 'quick-deposit-error' : undefined}
                   style={{ 
                     width: '100%', 
                     padding: '1rem 1.25rem', 
@@ -126,25 +139,27 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
                 <span style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', fontWeight: '700', color: 'var(--muted)' }}>STX</span>
               </div>
               {validationError && (
-                <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.75rem', fontWeight: '500' }}>
+                <div id="quick-deposit-error" role="alert" style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.75rem', fontWeight: '500' }}>
                   {validationError}
                 </div>
               )}
-            </div>
+              </div>
 
-            <Button 
-              onClick={submitTransaction}
-              isLoading={status === 'pending'}
-              disabled={!!validationError || !quickAmount}
-              variant="primary" 
-              size="lg"
-              fullWidth
-            >
-              Deposit Now <ArrowRight size={18} />
-            </Button>
+              <Button 
+                type="submit"
+                isLoading={status === 'pending'}
+                disabled={!!validationError || !quickAmount}
+                variant="primary" 
+                size="lg"
+                fullWidth
+                aria-label="Submit quick deposit"
+              >
+                Deposit Now <ArrowRight size={18} />
+              </Button>
+            </form>
 
             {status !== 'idle' && (
-              <div style={{ 
+              <div role="status" aria-live="polite" style={{ 
                 marginTop: '1rem', 
                 fontSize: '0.8rem', 
                 color: status === 'success' ? '#10b981' : (status === 'error' ? '#ef4444' : 'var(--muted)'),
@@ -157,21 +172,22 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
             <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
               <button 
                 onClick={onNavigateToVault}
+                aria-label="Go to Vault Manager"
                 style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.9rem', padding: 0 }}
               >
                 Go to Vault Manager →
               </button>
             </div>
-          </div>
+          </section>
 
-          <div style={{ 
+          <section style={{ 
             background: 'var(--secondary)', 
             padding: '2.5rem', 
             borderRadius: '32px', 
             border: '1px solid var(--border)',
             position: 'relative',
             overflow: 'hidden'
-          }}>
+          }} aria-label="Protocol security summary">
             <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Lock size={24} style={{ color: 'var(--primary)' }} /> Protocol Security
             </h3>
@@ -196,13 +212,13 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
               opacity: 0.1,
               filter: 'blur(20px)'
             }}></div>
-          </div>
+          </section>
         </div>
 
         {/* Transaction History Section */}
         <TransactionHistory userAddress={userAddress} />
       </motion.div>
-    </div>
+    </section>
   );
 };
 

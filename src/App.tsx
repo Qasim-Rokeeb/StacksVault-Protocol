@@ -33,19 +33,26 @@ const Navbar: React.FC<NavbarProps> = ({
   activeView, 
   onNavigate 
 }) => (
-  <header className="header">
+  <header className="header" role="banner">
     <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-      <div className="logo" onClick={() => userAddress ? onNavigate('dashboard') : null} style={{ cursor: userAddress ? 'pointer' : 'default' }}>
+      <button
+        type="button"
+        className="logo"
+        onClick={() => userAddress ? onNavigate('dashboard') : null}
+        style={{ cursor: userAddress ? 'pointer' : 'default' }}
+        disabled={!userAddress}
+        aria-label={userAddress ? 'Go to dashboard' : 'StackVault'}
+      >
         <Shield size={24} fill="var(--primary)" />
         Stack<span>Vault</span>
-      </div>
-      <nav className="nav-links" style={{ alignItems: 'center' }}>
+      </button>
+      <nav className="nav-links" style={{ alignItems: 'center' }} aria-label="Primary navigation">
         {userAddress && (userAddress.startsWith('SP') || userAddress.startsWith('SM')) && (
-          <div style={{ display: 'flex', alignItems: 'center', color: '#ef4444', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(239, 68, 68, 0.1)', padding: '0.35rem 0.75rem', borderRadius: '100px', border: '1px solid rgba(239,68,68,0.3)' }}>
+          <div role="alert" style={{ display: 'flex', alignItems: 'center', color: '#ef4444', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(239, 68, 68, 0.1)', padding: '0.35rem 0.75rem', borderRadius: '100px', border: '1px solid rgba(239,68,68,0.3)' }}>
             ⚠️ Unsupported Network (Switch to Testnet)
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--muted)', marginRight: '1rem' }}>
+        <div role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--muted)', marginRight: '1rem' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#eab308' }}></div>
           Testnet
         </div>
@@ -98,7 +105,7 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onConnect, isConnecting, error }) => (
-  <main>
+  <>
     <section className="hero">
       <div className="container">
         <motion.div 
@@ -119,15 +126,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onConnect, isConnecting, erro
               size="lg"
               onClick={onConnect}
               isLoading={isConnecting}
+              aria-label="Connect wallet and launch protocol"
             >
               Launch Protocol {!isConnecting && <ArrowRight size={18} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />}
             </Button>
-            <Button variant="secondary" size="lg">
+            <Button variant="secondary" size="lg" aria-label="View protocol whitepaper">
               View Whitepaper
             </Button>
           </div>
           {error && (
-            <p style={{ color: '#ef4444', marginTop: '1rem', fontSize: '0.875rem' }}>
+            <p role="alert" style={{ color: '#ef4444', marginTop: '1rem', fontSize: '0.875rem' }}>
               Error: {error}
             </p>
           )}
@@ -172,7 +180,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onConnect, isConnecting, erro
         </div>
       </div>
     </section>
-  </main>
+  </>
 );
 
 const App: React.FC = () => {
@@ -212,6 +220,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <VaultProvider>
         <Navbar 
           onConnect={handleConnect} 
@@ -231,15 +240,17 @@ const App: React.FC = () => {
         }} />
         
         <Suspense fallback={
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
+          <div role="status" aria-live="polite" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
             <Loader2 size={40} className="animate-spin" style={{ color: 'var(--primary)' }} />
             <p style={{ color: 'var(--muted)', fontWeight: '600', letterSpacing: '0.05em' }}>Loading modules...</p>
           </div>
         }>
-          {renderContent()}
+          <main id="main-content" tabIndex={-1}>
+            {renderContent()}
+          </main>
         </Suspense>
 
-        <footer>
+        <footer role="contentinfo">
           <div className="container" style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
             <p>© 2026 StackVault Protocol. Built on Stacks (Bitcoin L2).</p>
           </div>

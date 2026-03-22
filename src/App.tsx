@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { 
   Shield, 
   ArrowRight,
   Cpu,
   Globe,
-  Lock
+  Lock,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStacksWallet } from './hooks/useStacksWallet';
 import { VaultProvider } from './hooks/useVault';
-import Vault from './components/Vault';
-import Dashboard from './components/Dashboard';
+
+const Vault = lazy(() => import('./components/Vault'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
 import Button from './components/Button';
 import { Toaster } from 'react-hot-toast';
 
@@ -228,7 +230,14 @@ const App: React.FC = () => {
           },
         }} />
         
-        {renderContent()}
+        <Suspense fallback={
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
+            <Loader2 size={40} className="animate-spin" style={{ color: 'var(--primary)' }} />
+            <p style={{ color: 'var(--muted)', fontWeight: '600', letterSpacing: '0.05em' }}>Loading modules...</p>
+          </div>
+        }>
+          {renderContent()}
+        </Suspense>
 
         <footer>
           <div className="container" style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>

@@ -61,6 +61,7 @@ const Navbar: React.FC<NavbarProps> = ({
             <button 
               onClick={() => onNavigate('dashboard')} 
               className={`nav-link ${activeView === 'dashboard' ? 'active' : ''}`}
+              aria-current={activeView === 'dashboard' ? 'page' : undefined}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: activeView === 'dashboard' ? 'var(--primary)' : 'inherit' }}
             >
               Dashboard
@@ -68,6 +69,7 @@ const Navbar: React.FC<NavbarProps> = ({
             <button 
               onClick={() => onNavigate('vault')} 
               className={`nav-link ${activeView === 'vault' ? 'active' : ''}`}
+              aria-current={activeView === 'vault' ? 'page' : undefined}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: activeView === 'vault' ? 'var(--primary)' : 'inherit' }}
             >
               Vault Manager

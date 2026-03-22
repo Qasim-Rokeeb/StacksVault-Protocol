@@ -47,7 +47,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
   }, [status, resetStatus]);
 
   return (
-    <div className="container" style={{ paddingTop: '4rem', paddingBottom: '8rem' }}>
+    <section className="container" style={{ paddingTop: '4rem', paddingBottom: '8rem' }} aria-labelledby="vault-title">
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -68,7 +68,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
               }}>PROTOCOL ACTIVE</span>
               <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>Mainnet Beta</span>
             </div>
-            <h2 style={{ fontSize: '3rem', fontWeight: '900', lineHeight: '1' }}>Vault Manager</h2>
+            <h2 id="vault-title" style={{ fontSize: '3rem', fontWeight: '900', lineHeight: '1' }}>Vault Manager</h2>
           </div>
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem' }}>
             <Button variant="secondary" size="sm" onClick={onLogout}>
@@ -85,8 +85,12 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
           {/* Action Card */}
           <div>
             <div style={{ background: 'var(--secondary)', borderRadius: '32px', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-              <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }} role="tablist" aria-label="Transaction mode">
                 <button 
+                  id="tab-deposit"
+                  role="tab"
+                  aria-selected={isDepositing}
+                  aria-controls="transaction-panel"
                   onClick={() => setMode('deposit')}
                   style={{ 
                     flex: 1, 
@@ -101,6 +105,10 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                   Deposit
                 </button>
                 <button 
+                  id="tab-withdraw"
+                  role="tab"
+                  aria-selected={!isDepositing}
+                  aria-controls="transaction-panel"
                   onClick={() => setMode('withdraw')}
                   style={{ 
                     flex: 1, 
@@ -116,7 +124,12 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                 </button>
               </div>
 
-              <div style={{ padding: '3rem' }}>
+              <div
+                id="transaction-panel"
+                role="tabpanel"
+                aria-labelledby={isDepositing ? 'tab-deposit' : 'tab-withdraw'}
+                style={{ padding: '3rem' }}
+              >
                 <div style={{ marginBottom: '2rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                     <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>Input Amount</span>
@@ -125,38 +138,55 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                     </span>
                   </div>
                   <div style={{ position: 'relative' }}>
-                    <input 
-                      type="text" 
-                      inputMode="decimal"
-                      pattern="^[0-9]*[.,]?[0-9]*$"
-                      placeholder="0.00"
-                      value={amount}
-                      onChange={(e) => handleAmountChange(e.target.value)}
-                      style={{ 
-                        width: '100%', 
-                        padding: '2rem', 
-                        background: 'rgba(0,0,0,0.3)', 
-                        border: validationError ? '2px solid #ef4444' : '2px solid var(--border)', 
-                        borderRadius: '20px',
-                        color: 'white',
-                        fontSize: '2rem',
-                        fontWeight: '800',
-                        outline: 'none',
-                        transition: 'border-color 0.2s'
-                      }} 
-                    />
-                    <div style={{ position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <button 
-                        onClick={() => !isDepositing && setAmount(userBalance.toString())}
-                        style={{ padding: '0.4rem 0.825rem', background: 'rgba(255, 90, 0, 0.1)', color: 'var(--primary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700' }}
-                      >
-                        MAX
-                      </button>
-                      <span style={{ fontWeight: '800', fontSize: '1.25rem' }}>STX</span>
-                    </div>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        submitTransaction();
+                      }}
+                      aria-describedby={validationError ? 'vault-amount-error' : undefined}
+                    >
+                      <label htmlFor="vault-amount" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--muted)', fontSize: '0.875rem' }}>
+                        {isDepositing ? 'Deposit amount in STX' : 'Withdraw amount in STX'}
+                      </label>
+                      <input 
+                        id="vault-amount"
+                        type="text" 
+                        inputMode="decimal"
+                        pattern="^[0-9]*[.,]?[0-9]*$"
+                        placeholder="0.00"
+                        value={amount}
+                        onChange={(e) => handleAmountChange(e.target.value)}
+                        aria-invalid={!!validationError}
+                        aria-describedby={validationError ? 'vault-amount-error' : undefined}
+                        style={{ 
+                          width: '100%', 
+                          padding: '2rem', 
+                          background: 'rgba(0,0,0,0.3)', 
+                          border: validationError ? '2px solid #ef4444' : '2px solid var(--border)', 
+                          borderRadius: '20px',
+                          color: 'white',
+                          fontSize: '2rem',
+                          fontWeight: '800',
+                          outline: 'none',
+                          transition: 'border-color 0.2s'
+                        }} 
+                      />
+                      <div style={{ position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <button 
+                          type="button"
+                          onClick={() => !isDepositing && setAmount(userBalance.toString())}
+                          disabled={isDepositing}
+                          aria-label="Set withdraw amount to maximum balance"
+                          style={{ padding: '0.4rem 0.825rem', background: 'rgba(255, 90, 0, 0.1)', color: 'var(--primary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', opacity: isDepositing ? 0.5 : 1 }}
+                        >
+                          MAX
+                        </button>
+                        <span style={{ fontWeight: '800', fontSize: '1.25rem' }}>STX</span>
+                      </div>
+                    </form>
                   </div>
                   {validationError && (
-                    <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.75rem', fontWeight: '500' }}>
+                    <div id="vault-amount-error" role="alert" style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.75rem', fontWeight: '500' }}>
                       {validationError}
                     </div>
                   )}
@@ -181,6 +211,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                   size="lg"
                   fullWidth
                   style={{ borderRadius: '20px' }}
+                  aria-label={isDepositing ? 'Confirm deposit transaction' : 'Confirm withdrawal transaction'}
                 >
                   {isDepositing && status !== 'pending' && <ArrowDownCircle />}
                   {!isDepositing && status !== 'pending' && <ArrowUpCircle />}
@@ -193,6 +224,8 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
+                      role="status"
+                      aria-live="polite"
                       style={{ 
                         marginTop: '1.5rem',
                         padding: '1rem',
@@ -219,6 +252,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                             href={`https://explorer.hiro.so/txid/${txId}?chain=mainnet`} 
                             target="_blank" 
                             rel="noopener noreferrer"
+                            aria-label="View transaction in explorer (opens in a new tab)"
                             style={{ fontSize: '0.75rem', textDecoration: 'underline', color: 'var(--muted)', marginTop: '0.25rem', display: 'block' }}
                           >
                             View in Explorer
@@ -283,7 +317,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
           </div>
         </div>
       </motion.div>
-    </div>
+    </section>
   );
 };
 

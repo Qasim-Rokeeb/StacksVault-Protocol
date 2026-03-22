@@ -12,6 +12,9 @@
 (define-constant YIELD-APY u500)
 (define-constant BLOCKS-PER-YEAR u52560)
 
+;; Operational Constants
+(define-constant MIN-DEPOSIT-AMOUNT u1000000)
+
 ;; Data Vars
 (define-data-var total-liquidity uint u0)
 (define-data-var protocol-paused bool false)
@@ -27,10 +30,15 @@
 
 ;; Private Functions
 
+;; @desc Get user data with default fallback
+(define-private (get-user-data (user principal))
+    (default-to { amount: u0, last-reward-height: block-height } (map-get? VaultBalances user))
+)
+
 ;; @desc Calculate accrued yield for a user
 (define-private (calculate-accrued-yield (user principal))
     (let (
-        (user-data (default-to { amount: u0, last-reward-height: block-height } (map-get? VaultBalances user)))
+        (user-data (get-user-data user))
         (balance (get amount user-data))
         (last-height (get last-reward-height user-data))
         (blocks-passed (- block-height last-height))
@@ -47,7 +55,7 @@
 (define-private (accrue-yield (user principal))
     (let (
         (accrued (calculate-accrued-yield user))
-        (current-data (default-to { amount: u0, last-reward-height: block-height } (map-get? VaultBalances user)))
+        (current-data (get-user-data user))
     )
         (if (> accrued u0)
             (begin
@@ -83,10 +91,10 @@
         (try! (accrue-yield tx-sender))
         
         (let (
-            (current-balance (get amount (default-to { amount: u0, last-reward-height: block-height } (map-get? VaultBalances tx-sender))))
+            (current-balance (get amount (get-user-data tx-sender)))
         )
-            ;; Minimum deposit of 1 STX
-            (asserts! (>= amount u1000000) ERR-MIN-DEPOSIT)
+            ;; Minimum deposit check
+            (asserts! (>= amount MIN-DEPOSIT-AMOUNT) ERR-MIN-DEPOSIT)
             
             ;; Transfer STX from user to contract
             (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
@@ -171,7 +179,7 @@
 ;; @desc Get the balance of a specific user (including unaccrued yield)
 (define-read-only (get-balance (user principal))
     (let (
-        (user-data (default-to { amount: u0, last-reward-height: block-height } (map-get? VaultBalances user)))
+        (user-data (get-user-data user))
         (accrued (calculate-accrued-yield user))
     )
         (ok (+ (get amount user-data) accrued))

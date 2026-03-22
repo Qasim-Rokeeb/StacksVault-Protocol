@@ -92,7 +92,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
         transition={{ duration: 0.5 }}
       >
         {/* Upper Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+        <div className="vault-header">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
               <span style={{ 
@@ -122,7 +122,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '3rem' }}>
+        <div className="vault-grid">
           {/* Action Card */}
           <div>
             <div style={{ background: 'var(--secondary)', borderRadius: '32px', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
@@ -273,7 +273,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
 
           {/* Stats Pane */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div className="stats-grid">
               <div style={{ background: 'var(--secondary)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--border)' }}>
                 <div style={{ color: 'var(--primary)', marginBottom: '1rem' }}><Zap size={24} /></div>
                 <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Current APY</p>

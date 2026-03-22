@@ -30,7 +30,6 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
     fetchTotalLiquidity, 
     status, 
     txId, 
-    error, 
     userBalance, 
     totalLiquidity, 
     resetStatus 
@@ -250,7 +249,6 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                             View in Explorer
                           </a>
                         )}
-                        {error && <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>{error}</p>}
                       </div>
                     </motion.div>
                   )}

@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { useStacksWallet } from './hooks/useStacksWallet';
 import Vault from './components/Vault';
 import Dashboard from './components/Dashboard';
+import { Toaster } from 'react-hot-toast';
 
 interface NavbarProps {
   onConnect: () => void;
@@ -208,6 +209,14 @@ const App: React.FC = () => {
         activeView={userAddress ? activeView : 'landing'}
         onNavigate={(view) => setActiveView(view)}
       />
+      
+      <Toaster position="bottom-right" toastOptions={{
+        style: {
+          background: '#333',
+          color: '#fff',
+          borderRadius: '12px',
+        },
+      }} />
       
       {renderContent()}
 

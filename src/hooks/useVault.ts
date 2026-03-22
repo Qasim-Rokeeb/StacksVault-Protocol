@@ -9,6 +9,7 @@ import {
   cvToJSON
 } from '@stacks/transactions';
 import { userSession } from './useStacksWallet';
+import { toast } from 'react-hot-toast';
 
 export type TransactionStatus = 'idle' | 'pending' | 'success' | 'error';
 
@@ -24,7 +25,6 @@ const ERROR_CODES: Record<number, string> = {
 export const useVault = () => {
     const [status, setStatus] = useState<TransactionStatus>('idle');
     const [txId, setTxId] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const [userBalance, setUserBalance] = useState<number>(0);
     const [totalLiquidity, setTotalLiquidity] = useState<number>(0);
     const [accruedYield, setAccruedYield] = useState<number>(0);
@@ -113,7 +113,7 @@ export const useVault = () => {
 
     const depositSTX = useCallback(async (amountSTX: number) => {
         if (!userSession.isUserSignedIn()) {
-            setError('Please connect your wallet first.');
+            toast.error('Please connect your wallet first.');
             return;
         }
 
@@ -122,7 +122,6 @@ export const useVault = () => {
         const amountMicroSTX = Math.floor(amountSTX * 1000000);
 
         setStatus('pending');
-        setError(null);
 
         try {
             await openContractCall({
@@ -137,6 +136,7 @@ export const useVault = () => {
                 onFinish: (data) => {
                     setTxId(data.txId);
                     setStatus('success');
+                    toast.success('Deposit successful!');
                     // Refresh data after a delay to allow for mempool update
                     setTimeout(() => {
                         refreshData(address, false);
@@ -147,14 +147,14 @@ export const useVault = () => {
                 },
             });
         } catch (err: any) {
-            setError(mapError(err));
+            toast.error(mapError(err));
             setStatus('error');
         }
     }, [fetchBalance, fetchTotalLiquidity]);
 
     const withdrawSTX = useCallback(async (amountSTX: number) => {
         if (!userSession.isUserSignedIn()) {
-            setError('Please connect your wallet first.');
+            toast.error('Please connect your wallet first.');
             return;
         }
 
@@ -163,7 +163,6 @@ export const useVault = () => {
         const amountMicroSTX = Math.floor(amountSTX * 1000000);
 
         setStatus('pending');
-        setError(null);
 
         try {
             await openContractCall({
@@ -175,6 +174,7 @@ export const useVault = () => {
                 onFinish: (data) => {
                     setTxId(data.txId);
                     setStatus('success');
+                    toast.success('Withdrawal successful!');
                     setTimeout(() => {
                         refreshData(address, false);
                     }, 4000);
@@ -184,7 +184,7 @@ export const useVault = () => {
                 },
             });
         } catch (err: any) {
-            setError(mapError(err));
+            toast.error(mapError(err));
             setStatus('error');
         }
     }, [fetchBalance, fetchTotalLiquidity]);
@@ -198,7 +198,6 @@ export const useVault = () => {
         refreshData,
         status,
         txId,
-        error,
         userBalance,
         totalLiquidity,
         accruedYield,

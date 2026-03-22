@@ -23,6 +23,7 @@ interface VaultProps {
 const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
   const [amount, setAmount] = useState<string>('');
   const [isDepositing, setIsDepositing] = useState(true);
+  const [validationError, setValidationError] = useState<string | null>(null);
   
   const { 
     depositSTX, 
@@ -51,21 +52,40 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
     }
   }, [status, resetStatus]);
 
-  const handleAction = async () => {
+  useEffect(() => {
+    if (!amount) {
+      setValidationError(null);
+      return;
+    }
+    
     const val = parseFloat(amount);
-    if (isNaN(val) || val <= 0) return;
+    if (isNaN(val) || val <= 0) {
+      setValidationError("Please enter a valid amount greater than 0");
+      return;
+    }
 
     if (isDepositing) {
       if (val < 1) {
-        alert("Minimum deposit is 1 STX");
-        return;
+        setValidationError("Minimum deposit is 1 STX");
+      } else {
+        setValidationError(null);
       }
-      await depositSTX(val);
     } else {
       if (val > userBalance) {
-        alert("Insufficient balance");
-        return;
+        setValidationError(`Insufficient balance. You have ${userBalance} STX.`);
+      } else {
+        setValidationError(null);
       }
+    }
+  }, [amount, isDepositing, userBalance]);
+
+  const handleAction = async () => {
+    if (validationError || !amount) return;
+    const val = parseFloat(amount);
+    
+    if (isDepositing) {
+      await depositSTX(val);
+    } else {
       await withdrawSTX(val);
     }
   };
@@ -161,7 +181,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                         width: '100%', 
                         padding: '2rem', 
                         background: 'rgba(0,0,0,0.3)', 
-                        border: '2px solid var(--border)', 
+                        border: validationError ? '2px solid #ef4444' : '2px solid var(--border)', 
                         borderRadius: '20px',
                         color: 'white',
                         fontSize: '2rem',
@@ -180,6 +200,11 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                       <span style={{ fontWeight: '800', fontSize: '1.25rem' }}>STX</span>
                     </div>
                   </div>
+                  {validationError && (
+                    <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.75rem', fontWeight: '500' }}>
+                      {validationError}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', marginBottom: '2.5rem', border: '1px solid var(--border)' }}>
@@ -196,6 +221,7 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
                 <Button 
                   onClick={handleAction}
                   isLoading={status === 'pending'}
+                  disabled={!!validationError || !amount}
                   variant="primary" 
                   size="lg"
                   fullWidth

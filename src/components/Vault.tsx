@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Zap,
   Clock,
-  ExternalLink,
   Loader2,
   CheckCircle2,
   AlertCircle
@@ -15,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Button from './Button';
 import { useVault } from '../hooks/useVault';
 import { useTransactionForm } from '../hooks/useTransactionForm';
+import CopyableAddress from './CopyableAddress';
 
 interface VaultProps {
   userAddress: string;
@@ -75,11 +75,8 @@ const Vault: React.FC<VaultProps> = ({ userAddress, onLogout }) => {
               Disconnect
             </Button>
             <div>
-              <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Connected Wallet</p>
-              <p style={{ fontFamily: 'monospace', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--secondary)', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                {userAddress.slice(0, 6)}...{userAddress.slice(-6)}
-                <ExternalLink size={14} className="text-muted" />
-              </p>
+              <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.5rem', textAlign: 'right' }}>Connected Wallet</p>
+              <CopyableAddress address={userAddress} />
             </div>
           </div>
         </div>

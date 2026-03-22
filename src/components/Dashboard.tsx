@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import StatCard from './StatCard';
+import TransactionHistory from './TransactionHistory';
 import { useVault } from '../hooks/useVault';
 
 interface DashboardProps {
@@ -214,6 +215,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress, onNavigateToVault })
             }}></div>
           </div>
         </div>
+
+        {/* Transaction History Section */}
+        <TransactionHistory userAddress={userAddress} />
       </motion.div>
     </div>
   );
